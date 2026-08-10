@@ -156,6 +156,15 @@ input.num,select.num{font-family:var(--mono)}
 .users button small{font-weight:400;font-size:11.5px;color:var(--gris);font-family:var(--sans)}
 #lg-in{font-family:var(--mono);font-size:26px;text-align:center;letter-spacing:.4em;padding:13px;border-radius:11px}
 .login-err{color:var(--rojo);font-size:12.5px;height:17px;margin:8px 0 4px;font-weight:600}
+.sync{font-size:11.5px;font-weight:600;border-radius:999px;padding:6px 12px;display:inline-flex;align-items:center;gap:7px}
+.sync::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.sync.ok{color:var(--verde-osc);background:var(--verde-cl)}
+.sync.wait{color:#9c5420;background:var(--naranja-cl)}
+.sync.err{color:#8e3b32;background:var(--rojo-cl)}
+.sync.off{color:var(--gris);background:var(--line2)}
+.aviso{background:var(--naranja-cl);border:1px solid #efd7c1;color:#9c5420;border-radius:11px;
+  padding:11px 15px;font-size:12.5px;max-width:1240px;margin:14px auto 0;line-height:1.5}
+.aviso b{font-weight:700}
 .whoami{font-family:var(--disp);font-size:12.5px;font-weight:600;color:var(--gris2);background:var(--line2);
   border-radius:999px;padding:6px 13px}
 body.ro .solo-admin,body.ro .solo-carga,body.ro .btn.danger{display:none!important}
@@ -223,17 +232,10 @@ pre.raw{background:var(--line2);border-radius:9px;padding:12px;font-family:var(-
     <img class="mk" alt="" id="lg-mk">
     <img class="wm" alt="Winflex S.A." id="lg-wm">
     <p class="login-t">Estado de Pedidos</p>
-    <p class="login-s">Elegi tu usuario</p>
-    <div class="users" id="lg-users"></div>
-    <div id="lg-pin" class="hidden">
-      <p class="login-s" id="lg-quien"></p>
-      <input id="lg-in" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="&#8226;&#8226;&#8226;&#8226;">
-      <p class="login-err" id="lg-err"></p>
-      <div class="row-actions" style="justify-content:center">
-        <button class="btn" id="lg-go">Entrar</button>
-        <button class="btn ghost" id="lg-back">Volver</button>
-      </div>
-    </div>
+    <p class="login-s">Ingresa tu PIN</p>
+    <input id="lg-in" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="&#8226;&#8226;&#8226;&#8226;">
+    <p class="login-err" id="lg-err"></p>
+    <button class="btn" id="lg-go" style="width:100%">Entrar</button>
   </div>
 </div>
 
@@ -244,6 +246,7 @@ pre.raw{background:var(--line2);border-radius:9px;padding:12px;font-family:var(-
     <span class="sub">OC y Entregas</span>
   </div>
   <div class="spacer"></div>
+  <span class="sync" id="sync" title="Estado de la sincronizacion"></span>
   <span class="whoami" id="whoami"></span>
   <button id="btnCsv">Planilla</button>
   <button id="btnExp">Respaldo</button>
@@ -251,6 +254,8 @@ pre.raw{background:var(--line2);border-radius:9px;padding:12px;font-family:var(-
   <input type="file" id="fileImp" accept=".json" class="hidden">
   <button id="btnOut">Salir</button>
 </header>
+
+<div class="aviso hidden" id="aviso"></div>
 
 <div class="clientes" id="clientes" role="tablist" aria-label="Clientes"></div>
 
@@ -324,13 +329,145 @@ pre.raw{background:var(--line2);border-radius:9px;padding:12px;font-family:var(-
 <script>
 'use strict';
 
-/* ---------- almacenamiento (localStorage con respaldo en memoria) ---------- */
+/* ==================================================================
+   SINCRONIZACION — JSONBin
+   Completa las dos constantes de abajo con los datos de tu bin.
+   Mientras digan PONER_ACA la app funciona local, sin sincronizar.
+   ================================================================== */
+const BIN_ID = 'PONER_ACA_EL_ID_DEL_BIN';
+const BIN_KEY = 'PONER_ACA_LA_X_MASTER_KEY';
+
+const HAY_NUBE = !/^PONER_ACA/.test(BIN_ID) && !/^PONER_ACA/.test(BIN_KEY);
+const API = 'https://api.jsonbin.io/v3/b/' + BIN_ID;
+const CAB = { 'Content-Type':'application/json', 'X-Master-Key':BIN_KEY, 'X-Bin-Versioning':'true' };
+
+/* ---------- cache local ---------- */
 const KEY='winflex_oc_v9';
 let mem=null;
-const store={
+const local={
   get(){ try{const r=localStorage.getItem(KEY);return r?JSON.parse(r):mem;}catch(e){return mem;} },
   set(d){ mem=d; try{localStorage.setItem(KEY,JSON.stringify(d));}catch(e){} }
 };
+const store=local;   /* compatibilidad */
+
+/* ---------- estado visible ---------- */
+let CARGADO=false;          /* nunca se guarda antes de una lectura exitosa */
+let ULT_REV=null;
+function estado(cl,txt){
+  const e=document.getElementById('sync'); if(!e) return;
+  e.className='sync '+cl;
+  e.textContent = txt || {ok:'Sincronizado',wait:'Guardando…',err:'Error al guardar',off:'Sin conexión'}[cl] || '';
+  e.classList.toggle('hidden',!HAY_NUBE);
+}
+function aviso(t){
+  const a=document.getElementById('aviso'); if(!a) return;
+  a.innerHTML=t||''; a.classList.toggle('hidden',!t);
+}
+
+/* ---------- normalización ---------- */
+const AHORA=()=>Date.now();
+function normalizar(d){
+  d=d||{}; d.clientes=d.clientes||[]; d.ocs=d.ocs||[]; d.entregas=d.entregas||[];
+  d.borrados=d.borrados||{};
+  d.ocs.forEach(o=>{if(!o.ts)o.ts=1;});
+  d.entregas.forEach(e=>{if(!e.ts)e.ts=1;});
+  return d;
+}
+function borrar(id){ D.borrados[id]=AHORA(); }
+
+/* ---------- fusión por registro ----------
+   Une los dos lados en vez de pisar uno con el otro.
+   Ante el mismo id gana el que tenga la marca de tiempo mas nueva.
+   Un id borrado desaparece solo si el borrado es posterior al registro. */
+function fusionar(a,b){
+  a=normalizar(a); b=normalizar(b);
+  const tumbas={...a.borrados,...b.borrados};
+  Object.keys(a.borrados).forEach(k=>{ tumbas[k]=Math.max(a.borrados[k]||0,b.borrados[k]||0); });
+  const unir=(x,y)=>{
+    const m={};
+    [...x,...y].forEach(r=>{ const p=m[r.id]; if(!p||(r.ts||0)>(p.ts||0)) m[r.id]=r; });
+    return Object.values(m).filter(r=>!(tumbas[r.id]&&tumbas[r.id]>(r.ts||0)));
+  };
+  const cli=[...new Set([...a.clientes,...b.clientes])];
+  return {clientes:cli, ocs:unir(a.ocs,b.ocs), entregas:unir(a.entregas,b.entregas),
+          borrados:tumbas, rev:AHORA()};
+}
+/* red de seguridad: no subir si la fusion perdiera registros del servidor */
+function perderia(m,remoto){
+  if(!remoto) return false;
+  const r=normalizar(remoto);
+  const vivos=x=>x.filter(o=>!(m.borrados[o.id]&&m.borrados[o.id]>(o.ts||0))).length;
+  return m.ocs.length < vivos(r.ocs) || m.entregas.length < vivos(r.entregas);
+}
+
+/* ---------- lectura y escritura ---------- */
+async function bajar(){
+  const r=await fetch(API+'/latest',{headers:{'X-Master-Key':BIN_KEY}});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  const j=await r.json();
+  return normalizar(j.record);
+}
+async function subirRaw(d){
+  const r=await fetch(API,{method:'PUT',headers:CAB,body:JSON.stringify(d)});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+let colaId=null, subiendo=false;
+function empujar(){ if(!HAY_NUBE) return; clearTimeout(colaId); colaId=setTimeout(subir,900); }
+async function subir(){
+  if(!HAY_NUBE||!CARGADO||subiendo) return;
+  subiendo=true; estado('wait');
+  try{
+    let remoto=null;
+    try{ remoto=await bajar(); }catch(e){ if(!/404/.test(e.message)) throw e; }
+    const m=fusionar(remoto||{},D);
+    if(perderia(m,remoto)){
+      estado('err','Guardado detenido');
+      aviso('<b>Se detuvo el guardado.</b> La fusión con el servidor iba a perder registros. No se subió nada y tus datos locales están intactos. Avisá antes de seguir cargando.');
+      subiendo=false; return;
+    }
+    await subirRaw(m);
+    D=m; ULT_REV=m.rev; local.set(D); estado('ok'); aviso(''); render();
+  }catch(e){ estado('off'); }
+  subiendo=false;
+}
+
+/* ---------- traer cambios de las otras computadoras ---------- */
+async function refrescar(){
+  if(!HAY_NUBE||!CARGADO||subiendo) return;
+  try{
+    const remoto=await bajar();
+    if(remoto.rev&&remoto.rev===ULT_REV){ estado('ok'); return; }
+    const m=fusionar(remoto,D);
+    D=m; ULT_REV=remoto.rev; local.set(D); estado('ok'); render();
+  }catch(e){ estado('off'); }
+}
+
+/* ---------- arranque ---------- */
+async function iniciarNube(){
+  if(!HAY_NUBE){
+    estado('off');
+    aviso('<b>Sin sincronizar.</b> Faltan cargar <code>BIN_ID</code> y <code>BIN_KEY</code> arriba del bloque script. Mientras tanto los datos se guardan solo en esta computadora.');
+    CARGADO=false; return;
+  }
+  estado('wait','Conectando…');
+  try{
+    let remoto=null;
+    try{ remoto=await bajar(); }catch(e){ if(!/404/.test(e.message)) throw e; }
+    CARGADO=true;
+    if(remoto&&(remoto.ocs.length||remoto.entregas.length)){
+      D=fusionar(remoto,normalizar(D)); ULT_REV=remoto.rev;
+    }
+    local.set(D); estado('ok'); render();
+    if(!remoto||!remoto.ocs.length) subir();      /* bin vacío: sube lo que hay */
+    setInterval(refrescar,20000);
+    document.addEventListener('visibilitychange',()=>{ if(!document.hidden) refrescar(); });
+  }catch(e){
+    CARGADO=false; estado('err','Sin conexión con el servidor');
+    aviso('<b>No se pudo conectar.</b> Estás trabajando con la copia local y <b>no se va a guardar nada en el servidor</b> hasta que la conexión vuelva. Recargá la página antes de cargar datos importantes.');
+  }
+}
 
 /* ---------- datos iniciales: Don Yeyo ---------- */
 function seed(){
@@ -388,7 +525,7 @@ function seed(){
  };
 }
 
-let D=store.get(); if(!D||!D.ocs){D=seed();store.set(D);}
+let D=normalizar(store.get()); if(!D.ocs.length&&!D.clientes.length){D=normalizar(seed());store.set(D);}
 let cli=D.clientes[0], view='pend', open={};
 
 /* ---------- utilidades ---------- */
@@ -398,7 +535,7 @@ const fd=s=>s?s.split('-').reverse().join('/'):'—';
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const hoy=()=>new Date().toISOString().slice(0,10);
 const dias=f=>f?Math.floor((new Date(hoy())-new Date(f))/864e5):0;
-const save=()=>{store.set(D);render();};
+const save=()=>{D.rev=AHORA();local.set(D);render();empujar();};
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');
   clearTimeout(t._i);t._i=setTimeout(()=>t.classList.remove('show'),2400);}
 
@@ -619,9 +756,11 @@ document.body.addEventListener('click',e=>{
   const dq=e.target.closest('[data-delo]');
   if(dq){const o=D.ocs.find(x=>x.id===dq.dataset.delo);
     if(confirm(`Borrar la OC ${o.num} y sus entregas? No se puede deshacer.`)){
+      borrar(o.id); D.entregas.filter(x=>x.oc===o.id).forEach(x=>borrar(x.id));
       D.ocs=D.ocs.filter(x=>x.id!==o.id);D.entregas=D.entregas.filter(x=>x.oc!==o.id);save();toast('OC borrada');}return;}
   const de=e.target.closest('[data-dele]');
-  if(de&&confirm('Borrar esta entrega?')){D.entregas=D.entregas.filter(x=>x.id!==de.dataset.dele);save();toast('Entrega borrada');}
+  if(de&&confirm('Borrar esta entrega?')){borrar(de.dataset.dele);
+    D.entregas=D.entregas.filter(x=>x.id!==de.dataset.dele);save();toast('Entrega borrada');}
 });
 document.body.addEventListener('keydown',e=>{
   if((e.key==='Enter'||e.key===' ')&&e.target.dataset&&e.target.dataset.tog){e.preventDefault();e.target.click();}});
@@ -631,7 +770,7 @@ document.getElementById('o-add').onclick=()=>{
   let num=g('o-num'); const k=parseFloat(g('o-kg')), sinoc=!num;
   if(!(k>0)){toast('Los kg pedidos tienen que ser mayores a cero');return;}
   if(sinoc){const n=D.ocs.filter(o=>o.cli===cli&&o.sinoc).length+1; num='Pedido s/OC #'+n;}
-  D.ocs.push({id:uid(),cli,num,sinoc,ref:g('o-ref'),fec:g('o-fec'),art:g('o-art')||'—',fmt:g('o-fmt')||'—',kg:k,fe:g('o-fe')});
+  D.ocs.push({id:uid(),ts:AHORA(),cli,num,sinoc,ref:g('o-ref'),fec:g('o-fec'),art:g('o-art')||'—',fmt:g('o-fmt')||'—',kg:k,fe:g('o-fe')});
   ['o-num','o-kg','o-art','o-fmt','o-fec','o-fe','o-ref'].forEach(i=>document.getElementById(i).value='');
   save();toast(sinoc?num+' agregado':'OC '+num+' agregada');
 };
@@ -645,7 +784,7 @@ document.getElementById('e-add').onclick=()=>{
   if(!kgb&&bob) kgb=+(k/bob).toFixed(1);
   if(bob&&kgb&&Math.abs(bob*kgb-k)/k>0.03&&
      !confirm(`Los ${bob} bobinas x ${kgb} kg dan ${(bob*kgb).toFixed(1)} kg, y cargaste ${k} kg totales.\n\n¿Guardar igual?`)) return;
-  D.entregas.push({id:uid(),por:USER?USER.n:'',fec:g('e-fec')||hoy(),comp:g('e-comp')||'—',oc,kg:k,bob,kgb,pal,obs:g('e-obs')});
+  D.entregas.push({id:uid(),ts:AHORA(),por:USER?USER.n:'',fec:g('e-fec')||hoy(),comp:g('e-comp')||'—',oc,kg:k,bob,kgb,pal,obs:g('e-obs')});
   ['e-comp','e-kg','e-bob','e-kgb','e-pal','e-obs'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('e-chk').textContent='';
   save();toast('Entrega registrada');
@@ -673,7 +812,7 @@ document.getElementById('fileImp').onchange=e=>{
   const r=new FileReader();
   r.onload=()=>{try{const d=JSON.parse(r.result);
     if(!d.ocs||!d.entregas||!d.clientes)throw 0;
-    D=d;cli=D.clientes[0];open={};save();toast('Datos importados');
+    D=fusionar(normalizar(d),D);cli=D.clientes[0];open={};save();toast('Datos importados');
   }catch(err){toast('El archivo no tiene el formato esperado');}};
   r.readAsText(f); e.target.value='';
 };
@@ -823,7 +962,7 @@ function guardarPrev(){
     const i=chk.dataset.i, k=parseFloat(g('p-kg'+i));
     if(!(k>0)) return;
     const sf=g('p-sf'+i);
-    D.ocs.push({id:uid(),cli:c,num:(base||'s/n')+(sf?' · '+sf:''),sinoc:!base,ref:'',
+    D.ocs.push({id:uid(),ts:AHORA(),cli:c,num:(base||'s/n')+(sf?' · '+sf:''),sinoc:!base,ref:'',
       fec,art:g('p-art'+i)||'—',fmt:'—',kg:k,fe:g('p-fe'+i)});
     n++;
   });
@@ -859,10 +998,10 @@ async function procesar(files){
 /* ================= usuarios ================= */
 /* Para cambiar un PIN, edita el numero aca y volve a subir el archivo. */
 const USUARIOS=[
-  {n:'Matias',   pin:'2580', rol:'admin',   d:'Carga OC y entregas', c:'#1f9d63'},
-  {n:'Mirta',    pin:'1111', rol:'carga',   d:'Carga entregas',      c:'#d9793a'},
-  {n:'Georgina', pin:'2222', rol:'carga',   d:'Carga entregas',      c:'#7b5ea7'},
-  {n:'Jonathan', pin:'3333', rol:'lectura', d:'Consulta',            c:'#2b7bb9'}
+  {n:'Matias',   pin:'1205', rol:'admin',   c:'#1f9d63'},
+  {n:'Jonathan', pin:'3080', rol:'lectura', c:'#2b7bb9'},
+  {n:'Mirta',    pin:'0104', rol:'carga',   c:'#d9793a'},
+  {n:'Georgina', pin:'0102', rol:'carga',   c:'#7b5ea7'}
 ];
 let USER=null;
 const ses={ get(){try{return sessionStorage.getItem('winflex_user');}catch(e){return null;}},
@@ -877,39 +1016,32 @@ function aplicarRol(){
 function entrar(u){
   USER=u; ses.set(u.n); aplicarRol();
   document.getElementById('login').classList.add('off');
-  render();
+  render(); iniciarNube();
 }
 function pantallaLogin(){
-  const box=document.getElementById('lg-users');
-  box.innerHTML=USUARIOS.map((u,i)=>
-    '<button data-u="'+i+'"><u style="background:'+u.c+'"></u>'+esc(u.n)+' <small>'+esc(u.d)+'</small></button>').join('');
-  let sel=null;
-  box.onclick=function(e){var b=e.target.closest('[data-u]'); if(!b)return;
-    sel=USUARIOS[b.dataset.u];
-    document.getElementById('lg-quien').textContent='PIN de '+sel.n;
-    box.classList.add('hidden');
-    document.getElementById('lg-pin').classList.remove('hidden');
-    var inp=document.getElementById('lg-in'); inp.value=''; inp.focus();};
-  document.getElementById('lg-back').onclick=function(){sel=null;box.classList.remove('hidden');
-    document.getElementById('lg-pin').classList.add('hidden');
-    document.getElementById('lg-err').textContent='';};
-  function probar(){var inp=document.getElementById('lg-in');
-    if(sel&&inp.value===sel.pin) entrar(sel);
-    else{document.getElementById('lg-err').textContent='PIN incorrecto';inp.value='';inp.focus();}}
+  var inp=document.getElementById('lg-in'), err=document.getElementById('lg-err');
+  function probar(){
+    var u=USUARIOS.find(function(x){return x.pin===inp.value;});
+    if(u) entrar(u);
+    else{err.textContent='PIN incorrecto'; inp.value=''; inp.focus();}
+  }
   document.getElementById('lg-go').onclick=probar;
-  document.getElementById('lg-in').onkeydown=function(e){if(e.key==='Enter')probar();
-    document.getElementById('lg-err').textContent='';};
+  inp.onkeydown=function(e){ err.textContent=''; if(e.key==='Enter') probar(); };
+  inp.oninput=function(){ err.textContent='';
+    var u=USUARIOS.find(function(x){return x.pin===inp.value;});
+    if(u&&inp.value.length>=4) entrar(u);
+  };
   document.getElementById('lg-mk').src=document.querySelector('.logo img.mk').src;
   document.getElementById('lg-wm').src=document.querySelector('.logo img.wm').src;
-  var prev=ses.get(), u=USUARIOS.find(function(x){return x.n===prev;});
-  if(u) entrar(u);
+  var prev=ses.get(), pu=USUARIOS.find(function(x){return x.n===prev;});
+  if(pu) entrar(pu); else inp.focus();
 }
 document.getElementById('btnOut').onclick=function(){
   USER=null; ses.set(null); document.body.classList.remove('ro','carga');
   document.getElementById('whoami').textContent='';
-  document.getElementById('lg-users').classList.remove('hidden');
-  document.getElementById('lg-pin').classList.add('hidden');
+  var i=document.getElementById('lg-in'); i.value=''; document.getElementById('lg-err').textContent='';
   document.getElementById('login').classList.remove('off');
+  i.focus();
 };
 
 document.getElementById('e-fec').value=hoy();
