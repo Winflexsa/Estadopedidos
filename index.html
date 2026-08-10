@@ -94,6 +94,13 @@ main{padding:18px 20px;max-width:1240px;margin:0 auto}
 .oc-saldo small{display:block;font-size:9.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--gris);font-family:var(--sans)}
 
 /* firma: barra pedido / entregado / excedente */
+.oc-acc{display:flex;gap:6px;margin-left:auto}
+.oc-acc button{font-family:var(--sans);font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:7px;
+  border:1px solid var(--line);background:var(--panel);color:var(--gris2);cursor:pointer}
+.oc-acc button:hover{border-color:var(--verde);color:var(--verde-osc)}
+.oc-acc button.del:hover{border-color:var(--rojo);color:var(--rojo);background:var(--rojo-cl)}
+.dup{background:var(--naranja-cl);border:1px solid #efd7c1;color:#9c5420;border-radius:8px;
+  padding:8px 13px;font-size:12px;margin:0 18px 12px;font-weight:600}
 .bar-wrap{padding:0 18px 14px}
 .bar{position:relative;height:13px;background:var(--line2);border-radius:999px;overflow:hidden}
 .bar .fill{position:absolute;left:0;top:0;bottom:0;background:var(--verde);border-radius:999px;
@@ -608,12 +615,17 @@ function card({o,c}){
         <td class="n" style="color:${c.exceso?'var(--naranja)':'inherit'}">${c.exceso?'+'+kg(c.exceso):kg(c.saldo)}</td><td colspan="4"></td></tr>
       </tbody></table></div>`:'';
   const est=c.abierta?(c.atraso>0?'e-venc':'e-abierta'):'e-cerrada';
+  const dupn=D.ocs.filter(x=>x.cli===o.cli&&x.num===o.num).length;
+  const dup=dupn>1?dupn:0;
   return `<article class="oc ${est}"><div class="oc-top" data-tog="${o.id}" role="button" tabindex="0" aria-expanded="${!!open[o.id]}">
       <div class="oc-num">${o.sinoc?'':'OC '}${esc(o.num)}${o.sinoc?' <span class="tag sinoc">Sin OC</span>':''}</div>${t}
       <div class="oc-art">${esc(o.art)} · ${esc(o.fmt)}${o.fe?' · entrega '+fd(o.fe):''}${o.ref?' · '+esc(o.ref):''}</div>
       <div class="oc-saldo" style="color:${c.abierta?(c.atraso>0?'var(--rojo)':'var(--naranja)'):'var(--verde)'}">
         ${c.abierta?kg(c.saldo):'0,0'}<small>${c.abierta?'Kg pendientes':'Sin saldo'}</small></div>
-    </div>${barra(c)}${det}</article>`;
+      <div class="oc-acc solo-admin">
+        <button data-edito="${o.id}">Editar</button>
+        <button class="del" data-delo="${o.id}">Borrar</button></div>
+    </div>${dup?`<div class="dup">Hay ${dup} pedidos cargados con este mismo número. Revisá si quedó duplicado.</div>`:''}${barra(c)}${det}</article>`;
 }
 
 function vOcs(){
@@ -653,6 +665,11 @@ function alertas(){
       d:`Faltan ${kg(c.saldo)} kg de ${o.art}. Se comprometió para el ${fd(o.fe)}.`});
     if(c.exceso)a.push({bad:c.exceso/o.kg>0.1,t:`OC ${o.num} con ${kg(c.exceso)} kg entregados de más`,
       d:`${(c.exceso/o.kg*100).toFixed(1)}% por encima del pedido. Verificá que estén facturados.`});});
+  const vistos={};
+  ocsCli().forEach(o=>{vistos[o.num]=(vistos[o.num]||0)+1;});
+  Object.entries(vistos).filter(([,v])=>v>1).forEach(([k,v])=>a.push({bad:true,
+    t:`«${k}» está cargado ${v} veces`,
+    d:'Dos pedidos con el mismo número inflan el pendiente. Borrá el que sobre desde la tarjeta o desde Órdenes de compra.'}));
   return a;
 }
 function vAle(){
@@ -752,10 +769,13 @@ document.getElementById('clientes').onclick=e=>{
   cli=v; open={}; render();};
 
 document.body.addEventListener('click',e=>{
-  const t=e.target.closest('[data-tog]'); if(t){open[t.dataset.tog]=!open[t.dataset.tog];vPend();return;}
+  if(e.target.closest('[data-edito],[data-delo],[data-dele]')===null){
+    const t=e.target.closest('[data-tog]'); if(t){open[t.dataset.tog]=!open[t.dataset.tog];vPend();return;}}
   const dq=e.target.closest('[data-delo]');
-  if(dq){const o=D.ocs.find(x=>x.id===dq.dataset.delo);
-    if(confirm(`Borrar la OC ${o.num} y sus entregas? No se puede deshacer.`)){
+  if(dq){e.stopPropagation(); const o=D.ocs.find(x=>x.id===dq.dataset.delo); if(!o){toast('Ese pedido ya no está');return;}
+    const ne=D.entregas.filter(x=>x.oc===o.id).length;
+    if(confirm(`Borrar «${o.num}» de ${o.cli}?\n\n${o.art}\n${kg(o.kg)} kg pedidos`+
+       (ne?`\n\nSe borran también sus ${ne} entrega(s).`:'')+`\n\nNo se puede deshacer.`)){
       borrar(o.id); D.entregas.filter(x=>x.oc===o.id).forEach(x=>borrar(x.id));
       D.ocs=D.ocs.filter(x=>x.id!==o.id);D.entregas=D.entregas.filter(x=>x.oc!==o.id);save();toast('OC borrada');}return;}
   const de=e.target.closest('[data-dele]');
@@ -770,6 +790,8 @@ document.getElementById('o-add').onclick=()=>{
   let num=g('o-num'); const k=parseFloat(g('o-kg')), sinoc=!num;
   if(!(k>0)){toast('Los kg pedidos tienen que ser mayores a cero');return;}
   if(sinoc){const n=D.ocs.filter(o=>o.cli===cli&&o.sinoc).length+1; num='Pedido s/OC #'+n;}
+  else if(D.ocs.some(o=>o.cli===cli&&o.num===num)&&
+     !confirm(`Ya existe la OC ${num} para ${cli}. ¿Cargarla igual?`)) return;
   D.ocs.push({id:uid(),ts:AHORA(),cli,num,sinoc,ref:g('o-ref'),fec:g('o-fec'),art:g('o-art')||'—',fmt:g('o-fmt')||'—',kg:k,fe:g('o-fe')});
   ['o-num','o-kg','o-art','o-fmt','o-fec','o-fe','o-ref'].forEach(i=>document.getElementById(i).value='');
   save();toast(sinoc?num+' agregado':'OC '+num+' agregada');
@@ -999,6 +1021,8 @@ function guardarPrev(){
   const g=i=>{const e=document.getElementById(i);return e?e.value.trim():'';};
   const c=g('p-cli'), base=g('p-num'), fec=g('p-fec');
   if(!c){toast('Elegí el cliente');return;}
+  const yaHay=D.ocs.filter(o=>o.cli===c&&String(o.num).startsWith(base)&&base);
+  if(yaHay.length&&!confirm(`Ya hay ${yaHay.length} pedido(s) cargado(s) con el número ${base} para ${c}.\n\n¿Cargarlo igual?`)) return;
   if(!D.clientes.includes(c)) D.clientes.push(c);
   let n=0;
   document.querySelectorAll('.p-ok').forEach(chk=>{
@@ -1014,6 +1038,42 @@ function guardarPrev(){
   document.getElementById('ovl').className=''; PREV=null;
   cli=c; view='ocs'; save(); toast(n===1?'OC cargada':n+' OC cargadas');
 }
+
+/* ================= editar un pedido ================= */
+function editar(id){
+  const o=D.ocs.find(x=>x.id===id); if(!o) return;
+  const f=(l,i,t,v,ex)=>`<label><span class="lbl">${l}</span><input id="${i}" type="${t}" value="${esc(v==null?'':v)}" ${ex||''}></label>`;
+  document.getElementById('ovl').className='ovl';
+  document.getElementById('ovl').innerHTML=`<div class="modal" role="dialog" aria-label="Editar pedido">
+    <h2>Editar pedido</h2><p class="sub">${esc(o.cli)}</p>
+    <div class="grid">
+      ${f('Nº de OC','ed-num','text',o.num)}
+      ${f('Fecha OC','ed-fec','date',o.fec)}
+      ${f('Kg pedidos','ed-kg','number',o.kg,'step="0.1" class="num"')}
+      ${f('Entrega comprometida','ed-fe','date',o.fe)}
+    </div>
+    <div class="grid" style="margin-top:11px">
+      ${f('Artículo','ed-art','text',o.art)}
+      ${f('Formato','ed-fmt','text',o.fmt)}
+    </div>
+    <div style="margin-top:11px">${f('Referencia','ed-ref','text',o.ref)}</div>
+    <div class="row-actions">
+      <button class="btn" id="ed-go">Guardar cambios</button>
+      <button class="btn ghost" id="ed-x">Cancelar</button>
+    </div></div>`;
+  document.getElementById('ed-x').onclick=()=>{document.getElementById('ovl').className='';};
+  document.getElementById('ed-go').onclick=()=>{
+    const v=i=>document.getElementById(i).value.trim();
+    const k=parseFloat(v('ed-kg'));
+    if(!(k>0)){toast('Los kg pedidos tienen que ser mayores a cero');return;}
+    if(!v('ed-num')){toast('Falta el número de OC');return;}
+    Object.assign(o,{num:v('ed-num'),fec:v('ed-fec'),kg:k,fe:v('ed-fe'),
+                     art:v('ed-art')||'—',fmt:v('ed-fmt')||'—',ref:v('ed-ref'),ts:AHORA()});
+    document.getElementById('ovl').className=''; save(); toast('Pedido actualizado');
+  };
+}
+document.body.addEventListener('click',e=>{
+  const b=e.target.closest('[data-edito]'); if(b){e.stopPropagation();editar(b.dataset.edito);}});
 
 /* ================= eventos del dropzone ================= */
 const drop=document.getElementById('drop'), fpdf=document.getElementById('filePdf'), pst=document.getElementById('pdfState');
