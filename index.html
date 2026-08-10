@@ -874,6 +874,22 @@ const iso=t=>{ if(!t) return '';
   return `${a}-${m[2]}-${m[1]}`; };
 
 /* ================= parsers por cliente ================= */
+/* Respaldo: cualquier linea con texto + fecha + numero se ofrece como item.
+   Se usa cuando el parser del cliente no encontro nada. */
+function lineasGenericas(T){
+  const fuera=/^(fecha|articulo|art\u00edculo|pos|cantidad|numero|n\u00famero|orden|unidad|precio|bruto|total|son|nota|iva|cuit|domicilio|se\s+ruega|el\s+mismo|inic|ing|cond|sr|moneda|estado|lugar|impuestos|p\u00e1gina|pagina)/i;
+  const out=[];
+  T.split('\n').forEach(l=>{
+    const m=l.match(/^(.{6,}?)\s+(\d{2}[\/.]\d{2}[\/.]\d{2,4})\s+([\d.,]+)(?:\s+[A-Za-z]{2,8})?\s+([\d.,]+)/);
+    if(!m) return;
+    const art=m[1].replace(/\s+/g,' ').trim();
+    if(fuera.test(art)) return;
+    if(!/[a-z\u00e1\u00e9\u00ed\u00f3\u00fa]{3}/i.test(art)) return;
+    out.push({art,fe:iso(m[2]),kg:pnum(m[3])});
+  });
+  return out;
+}
+
 function parsePDF(txt){
   const T=txt.replace(/\u00a0/g,' ');
   /* --- Don Yeyo --- */
@@ -896,9 +912,10 @@ function parsePDF(txt){
   if(/El Artesano/i.test(T)){
     const num=(T.match(/Numero Comprobante:\s*(\d+)/i)||[])[1]||'';
     const fec=iso((T.match(/Fecha:\s*(\d{2}\/\d{2}\/\d{4})/)||[])[1]);
-    const it=[...T.matchAll(/([A-Za-zÁÉÍÓÚáéíóúñ][^\n]*?)\s+(\d{2}\/\d{2}\/\d{4})\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s*$/gm)]
+    let it=[...T.matchAll(/([A-Za-zÁÉÍÓÚáéíóúñ][^\n]{8,}?)\s+(\d{2}\/\d{2}\/\d{4})\s+([\d.,]+)\s+([\d.,]+)/g)]
       .map(m=>({art:m[1].replace(/\s+/g,' ').trim(),fe:iso(m[2]),kg:pnum(m[3])}))
-      .filter(x=>x.art.length>8&&!/^(Bruto|Son|Artículo)/i.test(x.art));
+      .filter(x=>!/^(Bruto|Son|Art\u00edculo|Fecha|Inic|Ing)/i.test(x.art));
+    if(!it.length) it=lineasGenericas(T);
     return {cli:'El Artesano',num,fec,items:it};
   }
   /* --- La Italiana --- */
@@ -909,47 +926,74 @@ function parsePDF(txt){
       .map(m=>({art:m[2].replace(/\s+/g,' ').trim(),fe:iso(m[3]),kg:pnum(m[1])}));
     return {cli:'La Italiana',num,fec,items:it};
   }
-  return {cli:'',num:'',fec:'',items:[]};
+  return {cli:'',num:'',fec:'',items:lineasGenericas(T)};
 }
 
 /* ================= pantalla de revisión ================= */
 let PREV=null;
+function filaPrev(x,i,multi,total){
+  return `<tr data-fila="${i}">
+    <td><input type="checkbox" class="p-ok" data-i="${i}" checked style="width:auto"></td>
+    <td><input id="p-art${i}" value="${esc(x.art||'')}" placeholder="descripción del artículo"></td>
+    <td><input class="num" id="p-kg${i}" type="number" step="0.1" value="${x.kg||''}" placeholder="0"
+        style="${x.kg>0?'':'border-color:var(--naranja);background:var(--naranja-cl)'}"></td>
+    <td><input type="date" id="p-fe${i}" value="${esc(x.fe||'')}"></td>
+    <td><input id="p-sf${i}" value="${multi?esc(x.pos?'pos '+x.pos:String(i+1)+' de '+total):''}" placeholder="opcional"></td>
+    <td><button class="btn danger" data-quita="${i}">Quitar</button></td>
+  </tr>`;
+}
+function pintarPrev(){
+  const multi=PREV.items.length>1, t=PREV.items.length;
+  document.getElementById('p-body').innerHTML=
+    PREV.items.length?PREV.items.map((x,i)=>filaPrev(x,i,multi,t)).join('')
+    :`<tr><td colspan="6" class="mini">Ninguna línea todavía. Agregá una con el botón de abajo.</td></tr>`;
+  document.getElementById('p-multi').classList.toggle('hidden',!multi);
+  document.getElementById('p-cero').classList.toggle('hidden',!PREV.items.some(x=>!(x.kg>0)));
+  document.getElementById('p-go').disabled=!PREV.items.length;
+}
+function leerPrev(){
+  PREV.items=PREV.items.map((x,i)=>{
+    const v=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};
+    return {...x,art:v('p-art'+i),kg:parseFloat(v('p-kg'+i))||0,fe:v('p-fe'+i),sf:v('p-sf'+i)};
+  });
+}
 function revisar(r,raw,nombre){
-  PREV={...r,raw,nombre};
+  PREV={...r,items:(r.items||[]).slice(),raw,nombre};
   const ops=D.clientes.map(c=>`<option${c===r.cli?' selected':''}>${esc(c)}</option>`).join('')
     +(r.cli&&!D.clientes.includes(r.cli)?`<option selected>${esc(r.cli)}</option>`:'');
-  const multi=r.items.length>1;
+  const reconocido=r.cli&&r.items.length;
   document.getElementById('ovl').className='ovl';
   document.getElementById('ovl').innerHTML=`<div class="modal" role="dialog" aria-label="Revisar OC del PDF">
     <h2>Revisá antes de guardar</h2>
-    <p class="sub">${esc(nombre)} · ${r.items.length?`<span class="badge">${r.items.length} línea${r.items.length>1?'s':''} detectada${r.items.length>1?'s':''}</span>`
-      :`<span class="badge warn">No se reconoció el formato</span>`}
-      ${r.cli?'':' · elegí el cliente a mano'}</p>
+    <p class="sub">${esc(nombre)} · ${reconocido
+      ?`<span class="badge">${r.items.length} línea${r.items.length>1?'s':''} detectada${r.items.length>1?'s':''}</span>`
+      :`<span class="badge warn">Lectura parcial — completá lo que falte</span>`}</p>
     <div class="grid" style="margin-bottom:14px">
       <label><span class="lbl">Cliente</span><select id="p-cli">${ops}</select></label>
       <label><span class="lbl">Nº de OC</span><input class="num" id="p-num" value="${esc(r.num)}"></label>
       <label><span class="lbl">Fecha OC</span><input type="date" id="p-fec" value="${esc(r.fec)}"></label>
     </div>
-    ${r.items.length?`<table><thead><tr><th style="width:32px"></th><th>Artículo</th><th class="n" style="width:110px">Kg</th>
-      <th style="width:150px">Entrega</th><th style="width:120px">Sufijo</th></tr></thead><tbody>
-      ${r.items.map((x,i)=>`<tr>
-        <td><input type="checkbox" class="p-ok" data-i="${i}" checked style="width:auto"></td>
-        <td><input id="p-art${i}" value="${esc(x.art)}"></td>
-        <td><input class="num" id="p-kg${i}" type="number" step="0.1" value="${x.kg||''}"
-      style="${x.kg>0?'':'border-color:var(--naranja);background:var(--naranja-cl)'}"></td>
-        <td><input type="date" id="p-fe${i}" value="${esc(x.fe)}"></td>
-        <td><input id="p-sf${i}" value="${multi?esc(x.pos?'pos '+x.pos:String(i+1)+' de '+r.items.length):''}" placeholder="opcional"></td>
-      </tr>`).join('')}</tbody></table>
-      ${r.items.some(x=>!(x.kg>0))?`<p class="mini" style="margin-top:9px;color:var(--naranja)">⚠ El PDF no trae la cantidad en las líneas marcadas. Completala con el remito a la vista antes de guardar.</p>`:''}
-      ${multi?`<p class="mini" style="margin-top:9px">Cada línea se carga como una OC aparte, con el sufijo que le pongas. Así cada una lleva su propia fecha y su propio saldo.</p>`:''}`
-    :`<p class="mini" style="margin-bottom:9px">No pude leer las líneas. Copiá los datos del texto de abajo y cargalos a mano, o corregí acá arriba y agregá una línea.</p>
-      <pre class="raw">${esc(raw.slice(0,2600))}</pre>`}
+    <table><thead><tr><th style="width:32px"></th><th>Artículo</th><th class="n" style="width:110px">Kg</th>
+      <th style="width:150px">Entrega</th><th style="width:120px">Sufijo</th><th style="width:70px"></th></tr></thead>
+      <tbody id="p-body"></tbody></table>
+    <p class="mini hidden" id="p-cero" style="margin-top:9px;color:var(--naranja)">⚠ Hay líneas sin cantidad. El PDF no la trae o no se pudo leer: completala con el remito a la vista.</p>
+    <p class="mini hidden" id="p-multi" style="margin-top:9px">Cada línea se carga como una OC aparte, con el sufijo que le pongas. Así cada una lleva su propia fecha y su propio saldo.</p>
     <div class="row-actions">
-      ${r.items.length?`<button class="btn" id="p-go">Guardar ${r.items.length>1?'las OC':'la OC'}</button>`:''}
+      <button class="btn ghost" id="p-add">+ Agregar línea</button>
+      <button class="btn" id="p-go">Guardar</button>
       <button class="btn ghost" id="p-x">Cancelar</button>
-    </div></div>`;
+      <button class="btn ghost" id="p-raw">Ver texto del PDF</button>
+    </div>
+    <pre class="raw hidden" id="p-rawbox">${esc(raw.slice(0,3000))}</pre>
+  </div>`;
+  pintarPrev();
+  document.getElementById('p-add').onclick=()=>{leerPrev();PREV.items.push({art:'',kg:0,fe:''});pintarPrev();};
+  document.getElementById('p-body').onclick=e=>{
+    const b=e.target.closest('[data-quita]'); if(!b)return;
+    leerPrev(); PREV.items.splice(+b.dataset.quita,1); pintarPrev();};
+  document.getElementById('p-raw').onclick=()=>document.getElementById('p-rawbox').classList.toggle('hidden');
   document.getElementById('p-x').onclick=()=>{document.getElementById('ovl').className='';PREV=null;};
-  const go=document.getElementById('p-go'); if(go) go.onclick=guardarPrev;
+  document.getElementById('p-go').onclick=guardarPrev;
 }
 function guardarPrev(){
   const g=i=>{const e=document.getElementById(i);return e?e.value.trim():'';};
@@ -966,7 +1010,7 @@ function guardarPrev(){
       fec,art:g('p-art'+i)||'—',fmt:'—',kg:k,fe:g('p-fe'+i)});
     n++;
   });
-  if(!n){toast('No quedó ninguna línea para guardar');return;}
+  if(!n){toast('No hay ninguna línea con kilos cargados');return;}
   document.getElementById('ovl').className=''; PREV=null;
   cli=c; view='ocs'; save(); toast(n===1?'OC cargada':n+' OC cargadas');
 }
