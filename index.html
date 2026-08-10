@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Winflex · Control de OC y Entregas</title>
+<title>Winflex · Estado de Pedidos</title>
+<meta name="description" content="Control de órdenes de compra y entregas por cliente.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#127a4a">
+<link rel="icon" href="favicon.png" sizes="64x64" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Pedidos">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1317,6 +1325,12 @@ document.getElementById('btnOut').onclick=function(){
   i.focus();
 };
 
+/* instalable como app */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  });
+}
 document.getElementById('e-fec').value=hoy();
 pantallaLogin();
 </script>
