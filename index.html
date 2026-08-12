@@ -659,7 +659,8 @@ function vEnt(){
    es.map(e=>`<tr><td class="num">${fd(e.fec)}</td><td class="num">${esc(e.comp)}</td><td class="num">${esc(nom(e.oc))}</td>
      <td class="n">${kg(e.kg)}</td><td class="n">${e.bob||'—'}</td><td class="n">${e.kgb?kg(e.kgb):'—'}</td>
      <td class="n">${e.pal||'—'}</td><td class="mini">${esc(e.obs)}</td>
-     <td><button class="btn danger" data-dele="${e.id}">Borrar</button></td></tr>`).join('')+
+     <td style="white-space:nowrap"><button class="btn danger" style="color:var(--verde-osc);border-color:var(--line)" data-edite="${e.id}">Editar</button>
+     <button class="btn danger" data-dele="${e.id}">Borrar</button></td></tr>`).join('')+
    `<tr class="sum"><td colspan="3">Total</td><td class="n">${kg(es.reduce((s,e)=>s+e.kg,0))}</td>
      <td class="n">${es.reduce((s,e)=>s+(e.bob||0),0)||'—'}</td><td class="n"></td>
      <td class="n">${es.reduce((s,e)=>s+(e.pal||0),0)||'—'}</td><td colspan="2"></td></tr>`+
@@ -1251,6 +1252,56 @@ function editar(id){
 }
 document.body.addEventListener('click',e=>{
   const b=e.target.closest('[data-edito]'); if(b){e.stopPropagation();editar(b.dataset.edito);}});
+
+/* ================= editar una entrega ================= */
+function editarEntrega(id){
+  const e=D.entregas.find(x=>x.id===id); if(!e) return;
+  const ops=ocsCli().map(o=>`<option value="${o.id}"${o.id===e.oc?' selected':''}>${o.sinoc?'':'OC '}${esc(o.num)} — ${esc(o.fmt)}</option>`).join('');
+  const f=(l,i,t,v,ex)=>`<label><span class="lbl">${l}</span><input id="${i}" type="${t}" value="${esc(v==null?'':v)}" ${ex||''}></label>`;
+  document.getElementById('ovl').className='ovl';
+  document.getElementById('ovl').innerHTML=`<div class="modal" role="dialog" aria-label="Editar entrega">
+    <h2>Editar entrega</h2><p class="sub">${esc(cli)}</p>
+    <div class="grid">
+      ${f('Fecha','ee-fec','date',e.fec)}
+      ${f('Nº de remito','ee-comp','text',e.comp)}
+      <label style="grid-column:span 2"><span class="lbl">Imputada a</span><select class="num" id="ee-oc">${ops}</select></label>
+    </div>
+    <div class="grid" style="margin-top:11px">
+      ${f('Kg totales','ee-kg','number',e.kg,'step="0.1" class="num"')}
+      ${f('Cantidad de bobinas','ee-bob','number',e.bob,'step="1" class="num"')}
+      ${f('Kg por bobina','ee-kgb','number',e.kgb,'step="0.1" class="num"')}
+      ${f('Cantidad de pallets','ee-pal','number',e.pal,'step="1" class="num"')}
+    </div>
+    <div style="margin-top:11px">${f('Observación','ee-obs','text',e.obs)}</div>
+    <p class="mini" id="ee-chk" style="margin-top:9px"></p>
+    <div class="row-actions">
+      <button class="btn" id="ee-go">Guardar cambios</button>
+      <button class="btn ghost" id="ee-x">Cancelar</button>
+    </div></div>`;
+  const v=i=>{const el=document.getElementById(i);return el?el.value.trim():'';};
+  const nu=i=>parseFloat(v(i))||0;
+  function chk(){
+    const k=nu('ee-kg'), b=nu('ee-bob'), kb=nu('ee-kgb'), c=document.getElementById('ee-chk');
+    if(k&&b&&kb){ const d=b*kb;
+      c.textContent = Math.abs(d-k)/k>0.03 ? `⚠ ${b} bobinas x ${kb} kg = ${d.toFixed(1)} kg, pero cargaste ${k} kg totales.`
+                                           : `${b} bobinas de ${kb} kg${nu('ee-pal')?' · '+nu('ee-pal')+' pallet(s)':''}`;
+      c.style.color = Math.abs(d-k)/k>0.03 ? 'var(--naranja)' : 'var(--gris)';
+    } else c.textContent='';
+  }
+  ['ee-kg','ee-bob','ee-kgb','ee-pal'].forEach(i=>document.getElementById(i).addEventListener('input',chk));
+  chk();
+  document.getElementById('ee-x').onclick=()=>{document.getElementById('ovl').className='';};
+  document.getElementById('ee-go').onclick=()=>{
+    const k=nu('ee-kg');
+    if(!(k>0)){toast('Los kg totales tienen que ser mayores a cero');return;}
+    Object.assign(e,{fec:v('ee-fec')||e.fec,comp:v('ee-comp')||'—',oc:v('ee-oc'),kg:k,
+      bob:parseInt(v('ee-bob'))||0,kgb:nu('ee-kgb'),pal:parseInt(v('ee-pal'))||0,
+      obs:v('ee-obs'),ts:AHORA()});
+    document.getElementById('ovl').className=''; save(); toast('Entrega actualizada');
+  };
+}
+document.body.addEventListener('click',e=>{
+  const b=e.target.closest('[data-edite]'); if(b){e.stopPropagation();editarEntrega(b.dataset.edite);}});
 
 /* ================= eventos del dropzone ================= */
 const drop=document.getElementById('drop'), fpdf=document.getElementById('filePdf'), pst=document.getElementById('pdfState');
