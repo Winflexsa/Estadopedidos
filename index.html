@@ -19,7 +19,7 @@
 :root{
   --verde:#1f9d63; --verde-osc:#127a4a; --verde-cl:#eef7f2; --verde-b:#cfe7db;
   --naranja:#d9793a; --naranja-cl:#fbf2ea; --rojo:#b4574c; --rojo-cl:#faefed;
-  --tinta:#28352f; --gris2:#4d5f57; --bg:#f7f9f8; --panel:#fff; --line:#e5ebe8; --line2:#f0f4f2; --gris:#7b8b83;
+  --tinta:#28352f; --gris2:#42544c; --bg:#eaf0ed; --panel:#fff; --line:#e5ebe8; --line2:#f0f4f2; --gris:#7b8b83;
   --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
   --sans:'IBM Plex Sans',-apple-system,'Segoe UI',Roboto,sans-serif;
   --disp:'Archivo','IBM Plex Sans',sans-serif;
@@ -32,8 +32,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--tinta);font-size:1
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 /* ---- header ---- */
-header{background:var(--panel);color:var(--tinta);border-bottom:1px solid var(--line);
-  padding:12px 20px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;position:sticky;top:0;z-index:30}
+header{background:var(--panel);color:var(--tinta);border-bottom:3px solid var(--verde-osc);
+  padding:12px 20px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;position:sticky;top:0;z-index:30;
+  box-shadow:0 2px 8px rgba(40,53,47,.06)}
 .logo{display:flex;align-items:center;gap:10px}
 .logo img.mk{height:31px;width:auto;display:block}
 .logo img.wm{height:20px;width:auto;display:block;margin-left:-2px}
@@ -49,11 +50,14 @@ header button:hover,header select:hover{border-color:var(--verde-b);color:var(--
 :focus-visible{outline:2px solid var(--verde);outline-offset:2px}
 
 /* ---- clientes ---- */
-.clientes{max-width:1240px;margin:0 auto;padding:14px 20px 0;display:flex;gap:8px;overflow-x:auto;align-items:center}
+.clientes-wrap{background:var(--panel);border-bottom:1px solid var(--line)}
+.clientes{max-width:1240px;margin:0 auto;padding:10px 20px;display:flex;gap:8px;overflow-x:auto;align-items:center}
 .clientes button{font-family:var(--disp);font-size:13.5px;font-weight:600;background:transparent;border:1px solid transparent;
   border-radius:9px;color:var(--gris);padding:8px 14px;cursor:pointer;white-space:nowrap;transition:.15s}
 .clientes button:hover{background:var(--panel);border-color:var(--line);color:var(--tinta)}
-.clientes button[aria-selected="true"]{background:var(--panel);border-color:var(--line);color:var(--tinta);box-shadow:var(--sh)}
+.clientes button[aria-selected="true"]{background:var(--verde-osc);border-color:var(--verde-osc);color:#fff;font-weight:700}
+.clientes button[aria-selected="true"] i{background:#fff}
+.clientes button[aria-selected="true"]:hover{background:var(--verde-osc);color:#fff}
 .clientes button[aria-selected="true"] i{background:var(--verde)}
 .clientes button i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--line);margin-right:8px;vertical-align:1px}
 .clientes .sep{width:1px;height:24px;background:var(--line);margin:0 4px;flex:none}
@@ -63,30 +67,31 @@ header button:hover,header select:hover{border-color:var(--verde-b);color:var(--
 /* ---- kpi ---- */
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:16px 20px 4px;max-width:1240px;margin:0 auto}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:14px 16px;box-shadow:var(--sh)}
-.kpi.warn{background:var(--naranja-cl);border-color:#efd7c1} .kpi.warn b{color:#9c5420}
-.kpi.bad{background:var(--rojo-cl);border-color:#eecfc9} .kpi.bad b{color:#8e3b32}
-.kpi.ok{background:var(--verde-cl);border-color:var(--verde-b)} .kpi.ok b{color:var(--verde-osc)}
-.kpi b{display:block;font-family:var(--mono);font-size:23px;font-weight:500;letter-spacing:-.03em;margin-top:5px;color:var(--tinta)}
+.kpi.warn{background:var(--naranja-cl);border-color:#e6bf9c;border-left:4px solid var(--naranja)} .kpi.warn b{color:#8c4a1c}
+.kpi.bad{background:var(--rojo-cl);border-color:#e5b8b1;border-left:4px solid var(--rojo)} .kpi.bad b{color:#82322a}
+.kpi.ok{background:var(--verde-cl);border-color:var(--verde-b);border-left:4px solid var(--verde)} .kpi.ok b{color:var(--verde-osc)}
+.kpi b{display:block;font-family:var(--mono);font-size:26px;font-weight:600;letter-spacing:-.035em;margin-top:6px;color:var(--tinta)}
 .kpi .lbl::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--verde-b);margin-right:7px;vertical-align:1px}
 .kpi.warn .lbl::before{background:var(--naranja)} .kpi.bad .lbl::before{background:var(--rojo)} .kpi.ok .lbl::before{background:var(--verde)}
 
 /* ---- tabs ---- */
-nav{padding:14px 20px 0;max-width:1240px;margin:0 auto;display:flex;gap:7px;overflow-x:auto}
-nav button{font-family:var(--sans);font-size:13.5px;font-weight:600;background:var(--panel);border:1px solid var(--line);
-  border-radius:999px;color:var(--gris);padding:9px 17px;cursor:pointer;white-space:nowrap;transition:.15s}
-nav button:hover{border-color:var(--verde-b);color:var(--verde-osc)}
-nav button[aria-selected="true"]{background:var(--verde-cl);border-color:var(--verde-b);color:var(--verde-osc)}
+nav{padding:0;max-width:1240px;margin:16px auto 0;display:flex;gap:4px;overflow-x:auto;
+  background:#dde7e2;border-radius:12px;width:fit-content;max-width:calc(100% - 40px);margin-left:20px}
+nav button{font-family:var(--sans);font-size:13.5px;font-weight:600;background:transparent;border:0;
+  border-radius:10px;color:var(--gris2);padding:9px 18px;cursor:pointer;white-space:nowrap;transition:.15s;margin:4px}
+nav button:hover{color:var(--verde-osc)}
+nav button[aria-selected="true"]{background:var(--panel);color:var(--verde-osc);box-shadow:0 1px 3px rgba(40,53,47,.14)}
 nav button .pill{background:var(--naranja-cl);color:var(--naranja);border-radius:999px;padding:1px 7px;font-size:10.5px;margin-left:6px;font-family:var(--mono)}
 
 main{padding:18px 20px;max-width:1240px;margin:0 auto}
 .hidden{display:none!important}
 
 /* ---- oc card ---- */
-.oc{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--line);
-  border-radius:5px 14px 14px 5px;margin-bottom:12px;overflow:hidden;box-shadow:var(--sh)}
-.oc.e-venc{border-left-color:var(--rojo);background:linear-gradient(96deg,var(--rojo-cl),var(--panel) 44%)}
-.oc.e-abierta{border-left-color:var(--naranja);background:linear-gradient(96deg,var(--naranja-cl),var(--panel) 44%)}
-.oc.e-cerrada{border-left-color:var(--verde-b)}
+.oc{background:var(--panel);border:1px solid var(--line);border-left:7px solid var(--line);
+  border-radius:5px 14px 14px 5px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 3px rgba(40,53,47,.07)}
+.oc.e-venc{border-left-color:var(--rojo);background:linear-gradient(96deg,var(--rojo-cl),var(--panel) 40%);box-shadow:0 2px 10px rgba(180,87,76,.16)}
+.oc.e-abierta{border-left-color:var(--naranja);background:linear-gradient(96deg,var(--naranja-cl),var(--panel) 40%)}
+.oc.e-cerrada{border-left-color:var(--verde-b);background:#fbfcfc}
 .oc.e-cerrada .oc-num,.oc.e-cerrada .oc-saldo{opacity:.72}
 .oc-top{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;padding:15px 18px 10px;cursor:pointer}
 .oc-top:hover{background:var(--line2)}
@@ -124,10 +129,11 @@ main{padding:18px 20px;max-width:1240px;margin:0 auto}
 /* detalle */
 .oc-det{border-top:1px solid var(--line2);background:#fafcfb;padding:14px 18px}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--gris2);
-  padding:9px 10px;background:var(--line2);border-bottom:1px solid var(--line)}
+th{text-align:left;font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#fff;
+  padding:9px 10px;background:var(--verde-osc);border-bottom:0}
 th:first-child{border-radius:8px 0 0 0} th:last-child{border-radius:0 8px 0 0}
-tbody tr:nth-child(even) td{background:#fbfcfc}
+tbody tr:nth-child(even) td{background:#f5f8f6}
+tbody tr:hover td{background:var(--verde-cl)}
 td{padding:7px 10px;border-bottom:1px solid var(--line2)}
 td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
 tbody tr:last-child td{border-bottom:0}
@@ -187,20 +193,23 @@ body.carga .solo-admin{display:none!important}
 
 /* resumen y secciones */
 .resumen{padding:0;overflow:hidden}
-.res-top{display:flex;justify-content:space-between;align-items:baseline;padding:15px 18px;
-  background:var(--verde-cl);border-bottom:1px solid var(--verde-b)}
-.res-top b{font-family:var(--mono);font-size:24px;font-weight:600;letter-spacing:-.03em;color:var(--verde-osc)}
+.res-top{display:flex;justify-content:space-between;align-items:baseline;padding:17px 20px;
+  background:var(--verde-osc);border-bottom:0}
+.res-top .lbl{color:rgba(255,255,255,.82)}
+.res-top b{font-family:var(--mono);font-size:27px;font-weight:600;letter-spacing:-.035em;color:#fff}
 .res-row{display:flex;justify-content:space-between;gap:16px;padding:9px 18px;border-bottom:1px solid var(--line2);font-size:13px}
 .res-row:last-child{border-bottom:0}
 .res-row span{color:var(--gris2)}
 .res-row b{font-family:var(--mono);font-weight:600}
-h3.sec{font-family:var(--disp);font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--gris2);background:var(--line2);border-radius:9px;padding:9px 15px;
-  margin:26px 0 11px;display:flex;align-items:center;gap:10px}
+h3.sec{font-family:var(--disp);font-size:12px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--gris2);background:#dde7e2;border-radius:9px;padding:10px 16px;
+  margin:28px 0 12px;display:flex;align-items:center;gap:10px}
 h3.sec:first-child{margin-top:4px}
-h3.sec.r{color:#8e3b32;background:var(--rojo-cl)}
-h3.sec.a{color:#9c5420;background:var(--naranja-cl)}
-h3.sec.v{color:var(--verde-osc);background:var(--verde-cl)}
+h3.sec.r{color:#fff;background:var(--rojo)}
+h3.sec.r span{background:rgba(255,255,255,.28);color:#fff}
+h3.sec.a{color:#fff;background:var(--naranja)}
+h3.sec.a span{background:rgba(255,255,255,.3);color:#fff}
+h3.sec.v{color:var(--verde-osc);background:var(--verde-b)}
 h3.sec span{font-family:var(--mono);background:rgba(255,255,255,.8);border-radius:999px;padding:2px 9px;letter-spacing:0;font-weight:600}
 .minibar{height:6px;background:var(--line2);border-radius:999px;overflow:hidden;min-width:70px;margin-top:5px}
 .minibar i{display:block;height:100%;background:var(--verde);border-radius:999px}
@@ -211,7 +220,12 @@ h3.sec span{font-family:var(--mono);background:rgba(255,255,255,.8);border-radiu
 .drop:hover,.drop.on{border-color:var(--verde);background:var(--verde-cl)}
 .drop b{display:block;font-family:var(--disp);font-size:14.5px;font-weight:600;margin-bottom:4px}
 .drop span{font-size:12.5px;color:var(--gris)}
-.ovl{position:fixed;inset:0;background:rgba(24,38,31,.45);z-index:60;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow:auto}
+.ovl{position:fixed;inset:0;background:rgba(24,38,31,.5);z-index:60;display:flex;align-items:flex-start;
+  justify-content:center;padding:24px 16px;overflow:auto;backdrop-filter:blur(2px)}
+.modal{position:relative}
+.cerrar{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);
+  background:var(--panel);color:var(--gris2);font-size:19px;line-height:1;cursor:pointer;font-family:var(--sans)}
+.cerrar:hover{border-color:var(--rojo);color:var(--rojo);background:var(--rojo-cl)}
 .modal{background:var(--panel);border-radius:16px;max-width:960px;width:100%;padding:22px;box-shadow:0 18px 50px rgba(21,37,29,.28)}
 .modal h2{font-family:var(--disp);font-size:17px;font-weight:600;margin-bottom:4px}
 .modal .sub{font-size:12.5px;color:var(--gris);margin-bottom:16px}
@@ -272,7 +286,7 @@ pre.raw{background:var(--line2);border-radius:9px;padding:12px;font-family:var(-
 
 <div class="aviso hidden" id="aviso"></div>
 
-<div class="clientes" id="clientes" role="tablist" aria-label="Clientes"></div>
+<div class="clientes-wrap"><div class="clientes" id="clientes" role="tablist" aria-label="Clientes"></div></div>
 
 <div class="kpis" id="kpis"></div>
 
@@ -559,9 +573,11 @@ const entOc=id=>D.entregas.filter(e=>e.oc===id).sort((a,b)=>a.fec<b.fec?-1:1);
 function calc(o){
   const es=entOc(o.id), ent=es.reduce((s,e)=>s+e.kg,0);
   const saldo=+(o.kg-ent).toFixed(1);
+  const abierta=saldo>0.05&&!o.cerradaManual;
   return {es,ent:+ent.toFixed(1),saldo,pct:o.kg?ent/o.kg*100:0,
-          abierta:saldo>0.05, exceso:saldo<-0.05?+(-saldo).toFixed(1):0,
-          atraso:o.fe&&saldo>0.05?dias(o.fe):0};
+          abierta, exceso:saldo<-0.05?+(-saldo).toFixed(1):0,
+          falta:o.cerradaManual&&saldo>0.05?+saldo.toFixed(1):0,
+          atraso:o.fe&&abierta?dias(o.fe):0};
 }
 
 /* ---------- barra ---------- */
@@ -576,7 +592,8 @@ function barra(c){
     <div class="bar-legend">
       <span class="chip">Entregado <b>${kg(c.ent)}</b> kg</span>
       ${c.exceso?`<span class="chip ex">Entregado de más <b>+${kg(c.exceso)}</b> kg</span>`
-                :`<span class="chip">Falta <b>${kg(c.saldo)}</b> kg</span>`}
+        :(c.falta?`<span class="chip ex">Cerrada con <b>${kg(c.falta)}</b> kg sin entregar</span>`
+                 :`<span class="chip">Falta <b>${kg(c.saldo)}</b> kg</span>`)}
       <span class="chip">${c.pct.toFixed(1)}% de la OC</span>
     </div></div>`;
 }
@@ -606,7 +623,7 @@ function vPend(){
 }
 function card({o,c}){
   const t=c.abierta?(c.atraso>0?`<span class="tag venc">Vencida hace ${c.atraso} d</span>`:`<span class="tag abierta">Abierta</span>`)
-                   :`<span class="tag cerrada">Cerrada${c.exceso?' · con excedente':''}</span>`;
+                   :`<span class="tag cerrada">Cerrada${c.exceso?' · con excedente':(c.falta?' · con faltante':'')}</span>`;
   const det=open[o.id]?`<div class="oc-det">
       <table><thead><tr><th>Fecha</th><th>Remito</th><th class="n">Kg</th><th class="n">Bob.</th><th class="n">Pallets</th>
         <th class="n">Acumulado</th><th>Observación</th></tr></thead><tbody>
@@ -631,6 +648,7 @@ function card({o,c}){
       <div class="oc-saldo" style="color:${c.abierta?(c.atraso>0?'var(--rojo)':'var(--naranja)'):'var(--verde)'}">
         ${c.abierta?kg(c.saldo):'0,0'}<small>${c.abierta?'Kg pendientes':'Sin saldo'}</small></div>
       <div class="oc-acc solo-admin">
+        <button data-cierra="${o.id}">${o.cerradaManual?'Reabrir':'Cerrar'}</button>
         <button data-edito="${o.id}">Editar</button>
         <button class="del" data-delo="${o.id}">Borrar</button></div>
     </div>${dup?`<div class="dup">Hay ${dup} pedidos cargados con este mismo número. Revisá si quedó duplicado.</div>`:''}${barra(c)}${det}</article>`;
@@ -930,7 +948,7 @@ async function armarInforme(ExcelJS){
    .map(({o,c})=>({t:c.atraso>0?'r':(c.exceso?'n':''), v:[o.cli,o.num,o.art,o.fmt,r1(o.kg),r1(c.ent),r1(c.saldo),
      c.es.reduce((s,e)=>s+(e.bob||0),0)||'',c.es.reduce((s,e)=>s+(e.pal||0),0)||'',
      fd(o.fec),fd(o.fe),c.atraso>0?c.atraso:'',
-     c.abierta?(c.atraso>0?'Vencida':'Abierta'):(c.exceso?'Cerrada con excedente':'Cerrada')]}));
+     c.abierta?(c.atraso>0?'Vencida':'Abierta'):(c.exceso?'Cerrada con excedente':(c.falta?'Cerrada con faltante':'Cerrada'))]}));
   hoja('Pendiente por OC','Pendiente de entrega por orden de compra',
     ['Cliente','Pedido / OC','Artículo','Formato','Pedido (kg)','Entregado (kg)','Saldo (kg)',
      'Bobinas','Pallets','Fecha OC','Entrega comprometida','Días de atraso','Estado'],
@@ -953,8 +971,8 @@ async function armarInforme(ExcelJS){
     let ac=0;
     c.es.forEach(e=>{ac+=e.kg;de.push([o.cli,o.num,'Entrega',fd(e.fec),e.comp||'',r1(e.kg),r1(ac)]);});
     de.push({v:[o.cli,o.num,'ENTREGADO','','',r1(c.ent),''],t:'sub'});
-    de.push({v:[o.cli,o.num,c.exceso?'EXCEDENTE':'SALDO','','',c.exceso?r1(c.exceso):r1(c.saldo),''],
-             t:c.exceso?'n':(c.abierta?'r':'sub')});
+    de.push({v:[o.cli,o.num,c.exceso?'EXCEDENTE':(c.falta?'CERRADA CON FALTANTE':'SALDO'),'','',
+                c.exceso?r1(c.exceso):r1(c.saldo),''], t:(c.exceso||c.falta)?'n':(c.abierta?'r':'sub')});
     de.push({v:['','','','','','',''],t:'vacia'});
   });
   hoja('Derivación','Cómo se llega a cada saldo, comprobante por comprobante',
@@ -1131,6 +1149,14 @@ function parsePDF(txt){
 
 /* ================= pantalla de revisión ================= */
 let PREV=null;
+const OVL=()=>document.getElementById('ovl');
+function cerrarModal(){ OVL().className=''; OVL().innerHTML=''; PREV=null; }
+function abrirModal(html){
+  const o=OVL(); o.className='ovl';
+  o.innerHTML='<div class="modal">'+html+'<button class="cerrar" data-cerrar aria-label="Cerrar">&times;</button></div>';
+  o.onclick=e=>{ if(e.target===o||e.target.closest('[data-cerrar]')) cerrarModal(); };
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&OVL().className) cerrarModal(); });
 function filaPrev(x,i,multi,total){
   return `<tr data-fila="${i}">
     <td><input type="checkbox" class="p-ok" data-i="${i}" checked style="width:auto"></td>
@@ -1162,9 +1188,7 @@ function revisar(r,raw,nombre){
   const ops=D.clientes.map(c=>`<option${c===r.cli?' selected':''}>${esc(c)}</option>`).join('')
     +(r.cli&&!D.clientes.includes(r.cli)?`<option selected>${esc(r.cli)}</option>`:'');
   const reconocido=r.cli&&r.items.length;
-  document.getElementById('ovl').className='ovl';
-  document.getElementById('ovl').innerHTML=`<div class="modal" role="dialog" aria-label="Revisar OC del PDF">
-    <h2>Revisá antes de guardar</h2>
+  abrirModal(`<h2>Revisá antes de guardar</h2>
     <p class="sub">${esc(nombre)} · ${reconocido
       ?`<span class="badge">${r.items.length} línea${r.items.length>1?'s':''} detectada${r.items.length>1?'s':''}</span>`
       :`<span class="badge warn">Lectura parcial — completá lo que falte</span>`}</p>
@@ -1184,15 +1208,14 @@ function revisar(r,raw,nombre){
       <button class="btn ghost" id="p-x">Cancelar</button>
       <button class="btn ghost" id="p-raw">Ver texto del PDF</button>
     </div>
-    <pre class="raw hidden" id="p-rawbox">${esc(raw.slice(0,3000))}</pre>
-  </div>`;
+    <pre class="raw hidden" id="p-rawbox">${esc(raw.slice(0,3000))}</pre>`);
   pintarPrev();
   document.getElementById('p-add').onclick=()=>{leerPrev();PREV.items.push({art:'',kg:0,fe:''});pintarPrev();};
   document.getElementById('p-body').onclick=e=>{
     const b=e.target.closest('[data-quita]'); if(!b)return;
     leerPrev(); PREV.items.splice(+b.dataset.quita,1); pintarPrev();};
   document.getElementById('p-raw').onclick=()=>document.getElementById('p-rawbox').classList.toggle('hidden');
-  document.getElementById('p-x').onclick=()=>{document.getElementById('ovl').className='';PREV=null;};
+  document.getElementById('p-x').onclick=cerrarModal;
   document.getElementById('p-go').onclick=guardarPrev;
 }
 function guardarPrev(){
@@ -1213,7 +1236,7 @@ function guardarPrev(){
     n++;
   });
   if(!n){toast('No hay ninguna línea con kilos cargados');return;}
-  document.getElementById('ovl').className=''; PREV=null;
+  cerrarModal();
   cli=c; view='ocs'; save(); toast(n===1?'OC cargada':n+' OC cargadas');
 }
 
@@ -1221,9 +1244,7 @@ function guardarPrev(){
 function editar(id){
   const o=D.ocs.find(x=>x.id===id); if(!o) return;
   const f=(l,i,t,v,ex)=>`<label><span class="lbl">${l}</span><input id="${i}" type="${t}" value="${esc(v==null?'':v)}" ${ex||''}></label>`;
-  document.getElementById('ovl').className='ovl';
-  document.getElementById('ovl').innerHTML=`<div class="modal" role="dialog" aria-label="Editar pedido">
-    <h2>Editar pedido</h2><p class="sub">${esc(o.cli)}</p>
+  abrirModal(`<h2>Editar pedido</h2><p class="sub">${esc(o.cli)}</p>
     <div class="grid">
       ${f('Nº de OC','ed-num','text',o.num)}
       ${f('Fecha OC','ed-fec','date',o.fec)}
@@ -1238,8 +1259,8 @@ function editar(id){
     <div class="row-actions">
       <button class="btn" id="ed-go">Guardar cambios</button>
       <button class="btn ghost" id="ed-x">Cancelar</button>
-    </div></div>`;
-  document.getElementById('ed-x').onclick=()=>{document.getElementById('ovl').className='';};
+    </div>`);
+  document.getElementById('ed-x').onclick=cerrarModal;
   document.getElementById('ed-go').onclick=()=>{
     const v=i=>document.getElementById(i).value.trim();
     const k=parseFloat(v('ed-kg'));
@@ -1247,20 +1268,25 @@ function editar(id){
     if(!v('ed-num')){toast('Falta el número de OC');return;}
     Object.assign(o,{num:v('ed-num'),fec:v('ed-fec'),kg:k,fe:v('ed-fe'),
                      art:v('ed-art')||'—',fmt:v('ed-fmt')||'—',ref:v('ed-ref'),ts:AHORA()});
-    document.getElementById('ovl').className=''; save(); toast('Pedido actualizado');
+    cerrarModal(); save(); toast('Pedido actualizado');
   };
 }
 document.body.addEventListener('click',e=>{
-  const b=e.target.closest('[data-edito]'); if(b){e.stopPropagation();editar(b.dataset.edito);}});
+  const b=e.target.closest('[data-edito]'); if(b){e.stopPropagation();editar(b.dataset.edito);return;}
+  const cc=e.target.closest('[data-cierra]'); if(!cc) return;
+  e.stopPropagation();
+  const o=D.ocs.find(x=>x.id===cc.dataset.cierra); if(!o) return;
+  const c=calc(o);
+  if(o.cerradaManual){ delete o.cerradaManual; o.ts=AHORA(); save(); toast('Pedido reabierto'); return; }
+  if(c.saldo>0.05&&!confirm(`Cerrar «${o.num}» con ${kg(c.saldo)} kg sin entregar?\n\nDeja de contar en el pendiente y sale de las vencidas. Se puede reabrir.`)) return;
+  o.cerradaManual=true; o.ts=AHORA(); save(); toast('Pedido cerrado');});
 
 /* ================= editar una entrega ================= */
 function editarEntrega(id){
   const e=D.entregas.find(x=>x.id===id); if(!e) return;
   const ops=ocsCli().map(o=>`<option value="${o.id}"${o.id===e.oc?' selected':''}>${o.sinoc?'':'OC '}${esc(o.num)} — ${esc(o.fmt)}</option>`).join('');
   const f=(l,i,t,v,ex)=>`<label><span class="lbl">${l}</span><input id="${i}" type="${t}" value="${esc(v==null?'':v)}" ${ex||''}></label>`;
-  document.getElementById('ovl').className='ovl';
-  document.getElementById('ovl').innerHTML=`<div class="modal" role="dialog" aria-label="Editar entrega">
-    <h2>Editar entrega</h2><p class="sub">${esc(cli)}</p>
+  abrirModal(`<h2>Editar entrega</h2><p class="sub">${esc(cli)}</p>
     <div class="grid">
       ${f('Fecha','ee-fec','date',e.fec)}
       ${f('Nº de remito','ee-comp','text',e.comp)}
@@ -1277,7 +1303,7 @@ function editarEntrega(id){
     <div class="row-actions">
       <button class="btn" id="ee-go">Guardar cambios</button>
       <button class="btn ghost" id="ee-x">Cancelar</button>
-    </div></div>`;
+    </div>`);
   const v=i=>{const el=document.getElementById(i);return el?el.value.trim():'';};
   const nu=i=>parseFloat(v(i))||0;
   function chk(){
@@ -1290,14 +1316,14 @@ function editarEntrega(id){
   }
   ['ee-kg','ee-bob','ee-kgb','ee-pal'].forEach(i=>document.getElementById(i).addEventListener('input',chk));
   chk();
-  document.getElementById('ee-x').onclick=()=>{document.getElementById('ovl').className='';};
+  document.getElementById('ee-x').onclick=cerrarModal;
   document.getElementById('ee-go').onclick=()=>{
     const k=nu('ee-kg');
     if(!(k>0)){toast('Los kg totales tienen que ser mayores a cero');return;}
     Object.assign(e,{fec:v('ee-fec')||e.fec,comp:v('ee-comp')||'—',oc:v('ee-oc'),kg:k,
       bob:parseInt(v('ee-bob'))||0,kgb:nu('ee-kgb'),pal:parseInt(v('ee-pal'))||0,
       obs:v('ee-obs'),ts:AHORA()});
-    document.getElementById('ovl').className=''; save(); toast('Entrega actualizada');
+    cerrarModal(); save(); toast('Entrega actualizada');
   };
 }
 document.body.addEventListener('click',e=>{
