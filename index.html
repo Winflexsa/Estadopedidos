@@ -63,6 +63,21 @@ header button:hover,header select:hover{border-color:var(--verde-b);color:var(--
 .clientes button i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--line);margin-right:8px;vertical-align:1px}
 .clientes .sep{width:1px;height:24px;background:var(--line);margin:0 4px;flex:none}
 .clientes button.add{color:var(--verde-osc);font-weight:500}
+
+/* ---- lineas de producto ---- */
+.lineas-wrap{background:var(--verde-cl);border-bottom:1px solid var(--verde-b)}
+.lineas{max-width:1240px;margin:0 auto;padding:9px 20px;display:flex;gap:9px;align-items:center;overflow-x:auto}
+.lineas .tit{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--verde-osc);
+  opacity:.7;flex:none;margin-right:2px}
+.lineas button{font-family:var(--disp);font-size:13px;font-weight:700;background:var(--panel);
+  border:1px solid var(--verde-b);border-radius:999px;color:var(--verde-osc);padding:7px 15px;cursor:pointer;
+  white-space:nowrap;display:flex;gap:9px;align-items:center;transition:.15s}
+.lineas button:hover{border-color:var(--verde)}
+.lineas button[aria-selected="true"]{background:var(--verde-osc);border-color:var(--verde-osc);color:#fff}
+.lineas .lp{font-family:var(--mono);font-weight:500;font-size:11.5px;opacity:.8}
+.lineas .lv{background:var(--rojo);color:#fff;border-radius:999px;font-family:var(--mono);font-size:10.5px;
+  font-weight:600;padding:1px 7px;line-height:1.45}
+.lineas button[aria-selected="true"] .lv{background:#fff;color:var(--rojo)}
 .tot-tbl td.cli{font-family:var(--disp);font-weight:600}
 
 /* ---- kpi ---- */
@@ -253,7 +268,7 @@ pre.raw{background:var(--line2);border-radius:9px;padding:12px;font-family:var(-
   box-shadow:0 8px 24px rgba(21,37,29,.26)}
 .toast.show{transform:translateX(-50%) translateY(0)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-@media(max-width:640px){main,.nav-wrap,.kpis,.clientes{padding-left:12px;padding-right:12px}.oc-saldo{text-align:left}header{padding:11px 13px}}
+@media(max-width:640px){main,.nav-wrap,.kpis,.clientes,.lineas{padding-left:12px;padding-right:12px}.oc-saldo{text-align:left}header{padding:11px 13px}}
 </style>
 </head>
 <body>
@@ -288,6 +303,9 @@ pre.raw{background:var(--line2);border-radius:9px;padding:12px;font-family:var(-
 
 <div class="aviso hidden" id="aviso"></div>
 
+<div class="lineas-wrap"><div class="lineas" id="lineas" role="tablist" aria-label="Linea de producto">
+  <span class="tit">Linea</span></div></div>
+
 <div class="clientes-wrap"><div class="clientes" id="clientes" role="tablist" aria-label="Clientes"></div></div>
 
 <div class="kpis" id="kpis"></div>
@@ -307,7 +325,7 @@ pre.raw{background:var(--line2);border-radius:9px;padding:12px;font-family:var(-
       <h2>Cargar OC desde PDF</h2>
       <div class="drop" id="drop" role="button" tabindex="0">
         <b>Arrastrá el PDF acá o hacé clic para elegirlo</b>
-        <span>Reconoce el formato de Don Yeyo, Molinos, La Italiana y El Artesano. Siempre vas a poder revisar antes de guardar.</span>
+        <span>Lee solo el formato de Don Yeyo, Molinos, La Italiana y El Artesano en PET/PE, y Silmag, Colgate, Blibox y Bligraf en PET. El resto se carga a mano. Siempre revisás antes de guardar.</span>
       </div>
       <input type="file" id="filePdf" accept="application/pdf" multiple class="hidden">
       <p class="mini" id="pdfState" style="margin-top:10px"></p>
@@ -399,7 +417,7 @@ function aviso(t){
 const AHORA=()=>Date.now();
 function normalizar(d){
   d=d||{}; d.clientes=d.clientes||[]; d.ocs=d.ocs||[]; d.entregas=d.entregas||[];
-  d.borrados=d.borrados||{};
+  d.borrados=d.borrados||{}; d.cliLinea=d.cliLinea||{};
   d.ocs.forEach(o=>{if(!o.ts)o.ts=1;});
   d.entregas.forEach(e=>{if(!e.ts)e.ts=1;});
   return d;
@@ -420,7 +438,8 @@ function fusionar(a,b){
     return Object.values(m).filter(r=>!(tumbas[r.id]&&tumbas[r.id]>(r.ts||0)));
   };
   const cli=[...new Set([...a.clientes,...b.clientes])];
-  return {clientes:cli, ocs:unir(a.ocs,b.ocs), entregas:unir(a.entregas,b.entregas),
+  return {clientes:cli, cliLinea:{...a.cliLinea,...b.cliLinea},
+          ocs:unir(a.ocs,b.ocs), entregas:unir(a.entregas,b.entregas),
           borrados:tumbas, rev:AHORA()};
 }
 /* red de seguridad: no subir si la fusion perdiera registros del servidor */
@@ -503,6 +522,7 @@ async function iniciarNube(){
 /* ---------- datos iniciales: Don Yeyo ---------- */
 function seed(){
  return {clientes:['Don Yeyo','Molinos Río de la Plata','La Italiana','El Artesano','Dantelli','Mendia'],
+  cliLinea:{},
   ocs:[
    {id:'a1',cli:'Don Yeyo',num:'14466',fec:'',art:'Lámina PET-PE 321x300',fmt:'bobinas 30/80 kg',kg:10000,fe:''},
    {id:'a2',cli:'Don Yeyo',num:'14833',fec:'',art:'Lámina PET-PE 321x300',fmt:'bobinas 80 kg',kg:16000,fe:''},
@@ -557,7 +577,27 @@ function seed(){
 }
 
 let D=normalizar(store.get()); if(!D.ocs.length&&!D.clientes.length){D=normalizar(seed());store.set(D);}
-let cli=D.clientes[0], view='pend', open={};
+
+/* ================= lineas de producto =================
+   Cada cliente pertenece a una linea. Los que ya estaban quedan en PET/PE.
+   Para mover un cliente de linea, cambialo en CLI_PET y volve a subir el archivo. */
+const LINEAS=[{k:'petpe',n:'PET / PE'},{k:'pet',n:'PET'}];
+const CLI_PET=['Blibox','Bligraf','Colgate','Huertas del Pilar','Laboreau','Silmag',
+               'Arias','JC Packing','Encapa','Trigger','Bioprotece'];
+const TOT='__tot';
+function asegurarLineas(){
+  D.cliLinea=D.cliLinea||{};
+  CLI_PET.forEach(n=>{ if(!D.clientes.includes(n)) D.clientes.push(n); D.cliLinea[n]='pet'; });
+  D.clientes.forEach(n=>{ if(!D.cliLinea[n]) D.cliLinea[n]='petpe'; });
+}
+const lineaDe=n=>(D.cliLinea&&D.cliLinea[n])||'petpe';
+const nomLinea=k=>(LINEAS.find(l=>l.k===k)||LINEAS[0]).n;
+const cliDe=k=>D.clientes.filter(n=>lineaDe(n)===k);
+const cliDeLinea=()=>cliDe(linea);
+
+let linea='petpe';
+asegurarLineas();
+let cli=cliDeLinea()[0], view='pend', open={};
 
 /* ---------- utilidades ---------- */
 const uid=()=>Math.random().toString(36).slice(2,9);
@@ -721,7 +761,7 @@ function kpis(){
 }
 
 function vTot(){
-  const filas=D.clientes.map(n=>{
+  const filas=cliDeLinea().map(n=>{
     const os=D.ocs.filter(o=>o.cli===n).map(o=>({o,c:calc(o)}));
     const ab=os.filter(x=>x.c.abierta);
     return {n, ab:ab.length, ve:os.filter(x=>x.c.atraso>0).length,
@@ -729,10 +769,11 @@ function vTot(){
       pen:ab.reduce((s,x)=>s+x.c.saldo,0), ex:os.reduce((s,x)=>s+x.c.exceso,0)};
   });
   const T=k=>filas.reduce((s,f)=>s+f[k],0);
-  const todas=D.ocs.map(o=>({o,c:calc(o)})).filter(x=>x.c.abierta)
+  const dela=cliDeLinea();
+  const todas=D.ocs.filter(o=>dela.includes(o.cli)).map(o=>({o,c:calc(o)})).filter(x=>x.c.abierta)
     .sort((a,b)=>(a.o.fe||'9')<(b.o.fe||'9')?-1:1);
   document.getElementById('v-tot').innerHTML=`
-  <div class="card"><h2>Pendiente por cliente</h2>
+  <div class="card"><h2>Pendiente por cliente · ${esc(nomLinea(linea))}</h2>
    <table class="tot-tbl"><thead><tr><th>Cliente</th><th class="n">OC abiertas</th><th class="n">Vencidas</th>
     <th class="n">Pedido</th><th class="n">Entregado</th><th class="n">Pendiente</th><th class="n">De más</th></tr></thead><tbody>
    ${filas.map(f=>`<tr><td class="cli">${esc(f.n)}
@@ -745,7 +786,7 @@ function vTot(){
      <td class="n">${kg(T('ped'))}</td><td class="n">${kg(T('ent'))}</td><td class="n">${kg(T('pen'))}</td>
      <td class="n">${T('ex')?'+'+kg(T('ex')):'—'}</td></tr>
    </tbody></table></div>
-  <div class="card"><h2>Todas las OC abiertas · por fecha de entrega</h2>
+  <div class="card"><h2>OC abiertas de ${esc(nomLinea(linea))} · por fecha de entrega</h2>
    ${todas.length?`<table><thead><tr><th>Cliente</th><th>OC</th><th>Artículo</th><th>Entrega</th>
      <th class="n">Atraso</th><th class="n">Pendiente</th></tr></thead><tbody>
     ${todas.map(({o,c})=>`<tr><td class="mini">${esc(o.cli)}</td><td class="num" style="font-weight:600">${esc(o.num)}</td>
@@ -755,10 +796,25 @@ function vTot(){
    </tbody></table>`:`<p class="mini">No hay OC abiertas.</p>`}</div>`;
 }
 
+function pintarLineas(){
+  document.getElementById('lineas').innerHTML='<span class="tit">Linea</span>'+
+    LINEAS.map(l=>{
+      const cs=cliDe(l.k);
+      const os=D.ocs.filter(o=>cs.includes(o.cli)).map(o=>({o,c:calc(o)}));
+      const pen=os.reduce((s,x)=>s+Math.max(0,x.c.saldo),0);
+      const ve=os.filter(x=>x.c.atraso>0).length;
+      return `<button role="tab" data-l="${l.k}" aria-selected="${l.k===linea}">${esc(l.n)}`+
+        `<span class="lp">${kg(pen)} kg</span>${ve?`<span class="lv" title="OC vencidas">${ve}</span>`:''}</button>`;
+    }).join('');
+}
+
 function render(){
-  const TOT='__tot';
+  asegurarLineas();
+  const dela=cliDeLinea();
+  if(cli!==TOT&&!dela.includes(cli)) cli=dela[0]||TOT;
+  pintarLineas();
   document.getElementById('clientes').innerHTML=
-    D.clientes.map(c=>`<button role="tab" data-c="${esc(c)}" aria-selected="${c===cli}"><i></i>${esc(c)}</button>`).join('')
+    dela.map(c=>`<button role="tab" data-c="${esc(c)}" aria-selected="${c===cli}"><i></i>${esc(c)}</button>`).join('')
     +`<span class="sep"></span>`
     +`<button role="tab" data-c="${TOT}" aria-selected="${cli===TOT}">Totales</button>`
     +`<button class="add" data-c="__new">+ Cliente</button>`;
@@ -766,12 +822,12 @@ function render(){
   document.querySelector('nav').classList.toggle('hidden',esTot);
   document.getElementById('kpis').classList.toggle('hidden',false);
   if(esTot){
-    const os=D.ocs.map(o=>({o,c:calc(o)}));
+    const os=D.ocs.filter(o=>dela.includes(o.cli)).map(o=>({o,c:calc(o)}));
     const pend=os.reduce((s,x)=>s+Math.max(0,x.c.saldo),0);
     const K=(l,v,c)=>`<div class="kpi ${c||''}"><span class="lbl">${l}</span><b>${v}</b></div>`;
     document.getElementById('kpis').innerHTML=
-      K('Kg pendientes · todos',kg(pend),pend>0?'warn':'ok')+
-      K('Clientes',D.clientes.length)+
+      K('Kg pendientes · '+nomLinea(linea),kg(pend),pend>0?'warn':'ok')+
+      K('Clientes',dela.length)+
       K('OC abiertas',os.filter(x=>x.c.abierta).length)+
       K('OC vencidas',os.filter(x=>x.c.atraso>0).length,os.some(x=>x.c.atraso>0)?'bad':'ok');
     vTot();
@@ -789,11 +845,16 @@ function render(){
 
 /* ---------- eventos ---------- */
 document.querySelector('nav').onclick=e=>{const b=e.target.closest('button[data-v]');if(b){view=b.dataset.v;render();}};
+document.getElementById('lineas').onclick=e=>{
+  const b=e.target.closest('[data-l]'); if(!b)return;
+  if(b.dataset.l===linea) return;
+  linea=b.dataset.l; cli=cliDeLinea()[0]||TOT; open={}; view='pend'; render();};
 document.getElementById('clientes').onclick=e=>{
   const b=e.target.closest('[data-c]'); if(!b)return;
   const v=b.dataset.c;
-  if(v==='__new'){const n=prompt('Nombre del cliente');
-    if(n&&n.trim()&&!D.clientes.includes(n.trim())){D.clientes.push(n.trim());cli=n.trim();open={};save();}
+  if(v==='__new'){const n=prompt('Nombre del cliente para la linea '+nomLinea(linea));
+    if(n&&n.trim()&&!D.clientes.includes(n.trim())){
+      D.clientes.push(n.trim()); D.cliLinea[n.trim()]=linea; cli=n.trim(); open={}; save();}
     return;}
   cli=v; open={}; render();};
 
@@ -932,39 +993,40 @@ async function armarInforme(ExcelJS){
 
   /* ---------- 1. resumen ---------- */
   const res=[]; let T=[0,0,0,0,0,0];
-  D.clientes.forEach(nm=>{
+  const ordenCli=LINEAS.reduce((a,l)=>a.concat(cliDe(l.k)),[]);
+  ordenCli.forEach(nm=>{
     const os=todas.filter(x=>x.o.cli===nm), ab=os.filter(x=>x.c.abierta);
     const f=[ab.length,os.filter(x=>x.c.atraso>0).length,
              r1(ab.reduce((s,x)=>s+x.o.kg,0)),r1(ab.reduce((s,x)=>s+x.c.ent,0)),
              r1(ab.reduce((s,x)=>s+x.c.saldo,0)),r1(os.reduce((s,x)=>s+x.c.exceso,0))];
     f.forEach((v,i)=>T[i]+=v);
-    res.push({v:[nm,...f],t:f[1]>0?'r':(f[4]>0?'n':'')});
+    res.push({v:[nomLinea(lineaDe(nm)),nm,...f],t:f[1]>0?'r':(f[4]>0?'n':'')});
   });
-  res.push({v:['TOTAL',...T.map(r1)],t:'tot'});
+  res.push({v:['','TOTAL',...T.map(r1)],t:'tot'});
   hoja('Resumen','Estado de pedidos — resumen por cliente',
-    ['Cliente','OC abiertas','OC vencidas','Pedido (kg)','Entregado (kg)','Pendiente (kg)','Entregado de más (kg)'],
-    res,[28,12,12,15,15,15,18],{num:[4,5,6,7],ent:[2,3]});
+    ['Línea','Cliente','OC abiertas','OC vencidas','Pedido (kg)','Entregado (kg)','Pendiente (kg)','Entregado de más (kg)'],
+    res,[13,28,12,12,15,15,15,18],{num:[5,6,7,8],ent:[3,4]});
 
   /* ---------- 2. pendiente por OC ---------- */
   const oc=todas.slice().sort((a,b)=>a.o.cli===b.o.cli?((a.o.fe||'9')<(b.o.fe||'9')?-1:1):(a.o.cli<b.o.cli?-1:1))
-   .map(({o,c})=>({t:c.atraso>0?'r':(c.exceso?'n':''), v:[o.cli,o.num,o.art,o.fmt,r1(o.kg),r1(c.ent),r1(c.saldo),
+   .map(({o,c})=>({t:c.atraso>0?'r':(c.exceso?'n':''), v:[nomLinea(lineaDe(o.cli)),o.cli,o.num,o.art,o.fmt,r1(o.kg),r1(c.ent),r1(c.saldo),
      c.es.reduce((s,e)=>s+(e.bob||0),0)||'',c.es.reduce((s,e)=>s+(e.pal||0),0)||'',
      fd(o.fec),fd(o.fe),c.atraso>0?c.atraso:'',
      c.abierta?(c.atraso>0?'Vencida':'Abierta'):(c.exceso?'Cerrada con excedente':(c.falta?'Cerrada con faltante':'Cerrada'))]}));
   hoja('Pendiente por OC','Pendiente de entrega por orden de compra',
-    ['Cliente','Pedido / OC','Artículo','Formato','Pedido (kg)','Entregado (kg)','Saldo (kg)',
+    ['Línea','Cliente','Pedido / OC','Artículo','Formato','Pedido (kg)','Entregado (kg)','Saldo (kg)',
      'Bobinas','Pallets','Fecha OC','Entrega comprometida','Días de atraso','Estado'],
-    oc,[24,22,38,17,13,14,13,9,9,12,15,12,20],{num:[5,6,7],ent:[8,9,12]});
+    oc,[13,24,22,38,17,13,14,13,9,9,12,15,12,20],{num:[6,7,8],ent:[9,10,13]});
 
   /* ---------- 3. entregas ---------- */
   const en=[];
   D.entregas.slice().sort((a,b)=>a.fec<b.fec?1:-1).forEach(e=>{
     const o=ocDe(e.oc); if(!o) return;
-    en.push([o.cli,o.num,fd(e.fec),e.comp||'',r1(e.kg),e.bob||'',e.kgb?r1(e.kgb):'',e.pal||'',e.por||'',e.obs||'']);
+    en.push([nomLinea(lineaDe(o.cli)),o.cli,o.num,fd(e.fec),e.comp||'',r1(e.kg),e.bob||'',e.kgb?r1(e.kgb):'',e.pal||'',e.por||'',e.obs||'']);
   });
   hoja('Entregas','Entregas registradas',
-    ['Cliente','Pedido / OC','Fecha','Remito','Kg','Bobinas','Kg por bobina','Pallets','Cargó','Observación'],
-    en,[24,22,12,18,13,9,13,9,12,42],{num:[5,7],ent:[6,8],wrap:true});
+    ['Línea','Cliente','Pedido / OC','Fecha','Remito','Kg','Bobinas','Kg por bobina','Pallets','Cargó','Observación'],
+    en,[13,24,22,12,18,13,9,13,9,12,42],{num:[6,8],ent:[7,9],wrap:true});
 
   /* ---------- 4. derivación ---------- */
   const de=[];
@@ -1014,12 +1076,12 @@ document.getElementById('btnCsv').onclick=async()=>{
     const a=document.createElement('a');a.href=u;a.download='Estado-de-pedidos-'+hoy()+'.xlsx';a.click();
     URL.revokeObjectURL(u); toast('Informe descargado');
   }catch(err){
-    const h=['Cliente','OC','Articulo','Formato','Pedido kg','Entregado kg','Saldo kg','Entrega','Dias de atraso','Estado'];
+    const h=['Linea','Cliente','OC','Articulo','Formato','Pedido kg','Entregado kg','Saldo kg','Entrega','Dias de atraso','Estado'];
     const num=v=>String(r1(v)).replace('.',',');
     const filas=D.ocs.map(o=>{const c=calc(o);
-      return [o.cli,o.num,o.art,o.fmt,num(o.kg),num(c.ent),num(c.saldo),fd(o.fe),c.atraso>0?c.atraso:'',
+      return [nomLinea(lineaDe(o.cli)),o.cli,o.num,o.art,o.fmt,num(o.kg),num(c.ent),num(c.saldo),fd(o.fe),c.atraso>0?c.atraso:'',
         c.abierta?(c.atraso>0?'Vencida':'Abierta'):(c.exceso?'Cerrada con excedente':'Cerrada')];});
-    const q=(v,i)=>((i>=4&&i<=6)||i===8)?v:`"${String(v).replace(/"/g,'""')}"`;
+    const q=(v,i)=>((i>=5&&i<=7)||i===9)?v:`"${String(v).replace(/"/g,'""')}"`;
     const csv='\ufeff'+[h.map(x=>`"${x}"`).join(';'),...filas.map(r=>r.map(q).join(';'))].join('\r\n');
     const b=new Blob([csv],{type:'text/csv;charset=utf-8'}),u=URL.createObjectURL(b);
     const a=document.createElement('a');a.href=u;a.download='pendiente-oc-'+hoy()+'.csv';a.click();
@@ -1032,7 +1094,7 @@ document.getElementById('fileImp').onchange=e=>{
   const r=new FileReader();
   r.onload=()=>{try{const d=JSON.parse(r.result);
     if(!d.ocs||!d.entregas||!d.clientes)throw 0;
-    D=fusionar(normalizar(d),D);cli=D.clientes[0];open={};save();toast('Datos importados');
+    D=fusionar(normalizar(d),D);asegurarLineas();cli=cliDeLinea()[0]||TOT;open={};save();toast('Datos importados');
   }catch(err){toast('El archivo no tiene el formato esperado');}};
   r.readAsText(f); e.target.value='';
 };
@@ -1066,20 +1128,32 @@ function loadPdfjs(){
   });
   return pdfjsReady;
 }
+/* Devuelve dos lecturas del mismo PDF:
+   - cruda: pega los pedazos con un espacio (la de siempre, la usan los parsers viejos)
+   - fina : pega segun la distancia real entre pedazos, asi no parte numeros ni fechas
+            en los PDF armados letra por letra (Blibox, Colgate) */
 async function pdfTexto(file){
   const lib=await loadPdfjs();
   const doc=await lib.getDocument({data:await file.arrayBuffer()}).promise;
-  let out=[];
+  let crudo=[], fino=[];
   for(let n=1;n<=doc.numPages;n++){
     const tc=await (await doc.getPage(n)).getTextContent();
     const filas={};
     tc.items.forEach(it=>{ const y=Math.round(it.transform[5]);
-      (filas[y]=filas[y]||[]).push({x:it.transform[4],t:it.str}); });
+      (filas[y]=filas[y]||[]).push({x:it.transform[4],w:it.width||0,h:it.height||0,t:it.str}); });
     Object.keys(filas).sort((a,b)=>b-a).forEach(y=>{
-      out.push(filas[y].sort((a,b)=>a.x-b.x).map(o=>o.t).join(' ').replace(/\s+/g,' ').trim());
+      const its=filas[y].sort((a,b)=>a.x-b.x);
+      crudo.push(its.map(o=>o.t).join(' ').replace(/\s+/g,' ').trim());
+      let l='';
+      its.forEach((o,i)=>{
+        if(i){ const pv=its[i-1], hueco=o.x-(pv.x+pv.w);
+          if(hueco>Math.max(1.2,0.28*(o.h||pv.h||10))) l+=' '; }
+        l+=o.t;
+      });
+      fino.push(l.replace(/\s+/g,' ').trim());
     });
   }
-  return out.filter(Boolean).join('\n');
+  return {crudo:crudo.filter(Boolean).join('\n'), fino:fino.filter(Boolean).join('\n')};
 }
 /* número con separadores AR o US */
 function pnum(t){
@@ -1092,6 +1166,61 @@ const iso=t=>{ if(!t) return '';
   const m=t.match(/(\d{2})[\/.](\d{2})[\/.](\d{2,4})/); if(!m) return '';
   let a=m[3]; if(a.length===2) a='20'+a;
   return `${a}-${m[2]}-${m[1]}`; };
+
+/* ---------- ayudas para los parsers ---------- */
+/* texto en un solo renglon: no depende de como pdf.js corte las lineas */
+const plano=T=>T.replace(/\n/g,' ').replace(/\s+/g,' ');
+
+/* meses en texto (Colgate / Taulia) */
+const MESES={ene:'01',feb:'02',mar:'03',abr:'04',may:'05',jun:'06',
+             jul:'07',ago:'08',sep:'09',set:'09',oct:'10',nov:'11',dic:'12'};
+function isoMes(t){
+  const m=(t||'').match(/(\d{1,2})\s*-?\s*([a-zA-Z\u00e1\u00e9\u00ed\u00f3\u00fa]{3})\.?\s*-?\s*(\d{4})/);
+  if(!m) return '';
+  const mm=MESES[m[2].toLowerCase()]; if(!mm) return '';
+  return m[3]+'-'+mm+'-'+String(m[1]).padStart(2,'0');
+}
+/* toma la primera fecha "de verdad": descarta las de los encabezados de formulario */
+function fechaReal(T,re){
+  const rx=new RegExp(re,'gi'), todas=[]; let m;
+  while((m=rx.exec(T))) todas.push(m[1]);
+  const ok=todas.map(iso).filter(f=>f&&+f.slice(0,4)>=2020);
+  return ok[0]||iso(todas[0]||'');
+}
+/* saca renglones repetidos: hay OC que vienen con la misma hoja dos veces */
+function sinRepetidos(it){
+  const vistos={}, out=[];
+  it.forEach(x=>{ const k=(x.art||'')+'|'+x.kg+'|'+(x.fe||'');
+    if(vistos[k]) return; vistos[k]=1; out.push(x); });
+  return out;
+}
+/* en los formularios tipo planilla el valor suele caer en el renglon de abajo
+   de la etiqueta, no al lado: busca en los dos lugares */
+function valorEtiqueta(ls,etiqueta){
+  const rx=new RegExp(etiqueta,'i');
+  for(let i=0;i<ls.length;i++){
+    if(!rx.test(ls[i])) continue;
+    const resto=ls[i].replace(new RegExp('^.*?'+etiqueta,'i'),'');
+    const aca=(resto.match(/[\d.,]+/)||[])[0];
+    if(aca) return aca;
+    for(let j=i+1;j<Math.min(i+3,ls.length);j++){
+      const m=ls[j].match(/^\s*([\d.,]+)\s*$/);
+      if(m) return m[1];
+      if(/[A-Za-z]{4}/.test(ls[j])) break;
+    }
+  }
+  return '';
+}
+
+/* descripcion mas probable del material dentro de un texto en mayusculas */
+function descMaterial(F){
+  const mal=/(ORDEN|COMPRA|PROVEEDOR|CONDICI|FECHA|OBSERV|MONEDA|TOTAL|IMPORTE|CANTIDAD|DESCRIPCI|C\u00d3DIGO|CODIGO|ESPECIFICACIONES|TRANSPORTE|BONIFICACI|CUIT|WINFLEX|ORIGINAL|SOLICITUD|CERTIFICADO|CALIDAD|HORARIO|DEP\u00d3SITO|DEPOSITO|EMITIDA|SUBTOTAL|IVA|PROVEEDO)/i;
+  return [...F.matchAll(/[A-Z\u00c1\u00c9\u00cd\u00d3\u00da\u00d1][A-Z\u00c1\u00c9\u00cd\u00d3\u00da\u00d10-9 .\/%x-]{8,70}/g)]
+    .map(m=>m[0].trim())
+    .map(t=>t.replace(/\s[A-Z\u00c1\u00c9\u00cd\u00d3\u00da\u00d1]$/,'').trim())
+    .filter(t=>/PET|FILM|L\u00c1MINA|LAMINA|BLISTER|POLI/i.test(t)&&!mal.test(t))
+    .sort((a,b)=>b.length-a.length)[0]||'';
+}
 
 /* ================= parsers por cliente ================= */
 /* Respaldo: cualquier linea con texto + fecha + numero se ofrece como item.
@@ -1110,8 +1239,83 @@ function lineasGenericas(T){
   return out;
 }
 
-function parsePDF(txt){
+function parsePDF(txt,txtFino){
   const T=txt.replace(/\u00a0/g,' ');
+  const TF=(txtFino||txt).replace(/\u00a0/g,' ');   /* lectura fina, para los parsers nuevos */
+  const F=plano(TF);
+
+  /* --- Silmag --- */
+  if(/SILMAG/i.test(TF)||/30708212659/.test(F)){
+    const num=(F.match(/Orden de Compra\s*([\d.]{7,})/i)||F.match(/\b(\d{3}\.\d{3}\.\d{3})\b/)||[])[1]||'';
+    const fec=fechaReal(F,'Fecha\\s*:?\\s*(\\d{2}\\/\\d{2}\\/\\d{4})');
+    const fe=iso((F.match(/Entrega\s*:?\s*(\d{2}\/\d{2}\/\d{4})/i)||[])[1]);
+    const cod=(F.match(/\b(PET-[A-Z0-9]{1,6})\b/)||[])[1]||'';
+    const it=[...F.matchAll(/([\d.,]+)\s*KG\b/gi)].map(m=>pnum(m[1])).filter(k=>k>0);
+    const desc=descMaterial(F);
+    const art=[cod,desc].filter(Boolean).join(' \u00b7 ')||desc||cod;
+    return {cli:'Silmag',num,fec,items:sinRepetidos(it.map(k=>({art,kg:k,fe})))};
+  }
+
+  /* --- Colgate (portal Taulia) --- */
+  if(/Colgate|Colpal|Taulia/i.test(TF)){
+    const num=(F.match(/N[\u00fau]mero de pedido\s*(\d{6,})/i)||F.match(/\b(45\d{8})\b/)||[])[1]||'';
+    const fec=isoMes((F.match(/Fecha\s+(\d{1,2}\s*-\s*[a-z]{3}\.?\s*-\s*\d{4})/i)||[])[1]);
+    const it=[], ls=TF.split('\n');
+    ls.forEach((l,ix)=>{
+      const m=l.match(/^\s*(\d{1,3})\s+([A-Z]{1,3}\d{5,}\s*-\s*.+?)\s+([\d.,]+)\s+(\d{1,2}\s*-\s*[a-z]{3})\.?\s*-?\s*(\d{4})?/i);
+      if(!m) return;
+      const sig=ls[ix+1]||'';
+      /* el renglon de abajo suele traer el año de la entrega y el resto de la descripcion */
+      const anio=m[5]||(sig.match(/\b(20\d{2})\b/)||[])[1]||'';
+      let art=m[2].replace(/\s+/g,' ').trim();
+      const cont=sig.replace(/\b20\d{2}\b/g,'').replace(/[\d.,]+\s*$/,'').trim();
+      if(cont&&cont.length<=28&&!/^\d/.test(cont)&&!/[A-Z]{1,3}\d{5,}/.test(cont)) art+=' '+cont;
+      it.push({pos:m[1],art,kg:pnum(m[3]),fe:anio?isoMes(m[4]+'-'+anio):''});
+    });
+    return {cli:'Colgate',num,fec,items:sinRepetidos(it)};
+  }
+
+  /* --- Blibox (nota de pedido de materiales) --- */
+  if(/BLIBOX/i.test(TF)){
+    const num=(F.match(/Pedido de Material\s*N?[\u00ba\u00b0o]?\s*(\d{2,})/i)||[])[1]||'';
+    const fec=fechaReal(F,'Fecha[:\\s]*(\\d{2}\\/\\d{2}\\/\\d{2,4})');
+    const ls=TF.split('\n');
+    const kgp=pnum(valorEtiqueta(ls,'Cantidad\\s*\\[\\s*kg')||
+                   (F.match(/Cantidad\s*\[?\s*kg\s*\]?\s*([\d.,]+)/i)||[])[1]);
+    const mat=(F.match(/Material\s+([A-Z]{2,12})/)||[])[1]||'PET';
+    const col=(F.match(/Color\s+([A-Z\u00c1\u00c9\u00cd\u00d3\u00da\u00d10-9\/ ]{3,40}?)\s*(?:ROLLOS|PLANCHAS|Ancho|$)/i)||[])[1]||'';
+    const anc=valorEtiqueta(ls,'Ancho\\s*\\[')||(F.match(/Ancho\s*\[[^\]]*\]\s*(\d{2,4})/i)||[])[1]||'';
+    const esp=valorEtiqueta(ls,'Espesor\\s*\\[')||(F.match(/Espesor\s*\[[^\]]*\]\s*(\d{2,4})/i)||[])[1]||'';
+    const bob=(F.match(/Bobinas?\s*(?:de\s*)?(\d{2,3})\s*kg/i)||[])[1]||'';
+    const art=[mat,col.trim(),anc?anc+' mm':'',esp?esp+' mic':''].filter(Boolean).join(' \u00b7 ');
+    const fe=fechaReal((F.split(/Entrega del material/i)[1]||''),'(\\d{2}\\/\\d{2}\\/\\d{4})');
+    return {cli:'Blibox',num,fec,items:kgp>0?[{art,kg:kgp,fe,fmt:bob?'bobinas '+bob+' kg':''}]:[]};
+  }
+
+  /* --- Bligraf --- */
+  if(/Bligraf/i.test(TF)||/BGF-\d/.test(F)){
+    const num=(F.match(/ORDEN DE COMPRA\s*N?[\u00ba\u00b0o]?\s*(\d+\s*-\s*\d+)/i)||
+               F.match(/\b(\d{5}-\d{8})\b/)||[])[1]||'';
+    const fec=iso((F.match(/Fecha\s*Emisi[o\u00f3]n\s*:?\s*(\d{2}\/\d{2}\/\d{4})/i)||[])[1]);
+    const fe=iso((F.match(/Fecha\s*Entrega\s*:?\s*(\d{2}\/\d{2}\/\d{4})/i)||[])[1]);
+    const it=[];
+    TF.split('\n').forEach(l=>{
+      if(!/BGF-/.test(l)) return;
+      const tk=l.trim().split(/\s+/);
+      if(!/^BGF-/.test(tk[0])) return;
+      const cod=tk.shift();
+      let qi=-1;
+      for(let i=tk.length-1;i>=3;i--){
+        const q=pnum(tk[i-3]), pr=pnum(tk[i-2]), im=pnum(tk[i]);
+        if(q>0&&pr>0&&im>0&&Math.abs(q*pr-im)/im<0.02){ qi=i-3; break; }
+      }
+      if(qi<0) qi=tk.length-4;
+      if(qi<1) return;
+      it.push({art:(cod+' \u00b7 '+tk.slice(0,qi).join(' ')).trim(),kg:pnum(tk[qi]),fe});
+    });
+    return {cli:'Bligraf',num:num.replace(/\s+/g,''),fec,items:sinRepetidos(it)};
+  }
+
   /* --- Don Yeyo --- */
   if(/DON YEYO/i.test(T)){
     const num=(T.match(/OC-0*(\d+)/)||[])[1]||'';
@@ -1187,7 +1391,11 @@ function leerPrev(){
 }
 function revisar(r,raw,nombre){
   PREV={...r,items:(r.items||[]).slice(),raw,nombre};
-  const ops=D.clientes.map(c=>`<option${c===r.cli?' selected':''}>${esc(c)}</option>`).join('')
+  const ops=LINEAS.map(l=>{
+      const cs=cliDe(l.k); if(!cs.length) return '';
+      return `<optgroup label="${esc(l.n)}">`+
+        cs.map(c=>`<option${c===r.cli?' selected':''}>${esc(c)}</option>`).join('')+`</optgroup>`;
+    }).join('')
     +(r.cli&&!D.clientes.includes(r.cli)?`<option selected>${esc(r.cli)}</option>`:'');
   const reconocido=r.cli&&r.items.length;
   abrirModal(`<h2>Revisá antes de guardar</h2>
@@ -1226,20 +1434,21 @@ function guardarPrev(){
   if(!c){toast('Elegí el cliente');return;}
   const yaHay=D.ocs.filter(o=>o.cli===c&&String(o.num).startsWith(base)&&base);
   if(yaHay.length&&!confirm(`Ya hay ${yaHay.length} pedido(s) cargado(s) con el número ${base} para ${c}.\n\n¿Cargarlo igual?`)) return;
-  if(!D.clientes.includes(c)) D.clientes.push(c);
+  if(!D.clientes.includes(c)){ D.clientes.push(c); D.cliLinea[c]=linea; }
   let n=0;
   document.querySelectorAll('.p-ok').forEach(chk=>{
     if(!chk.checked) return;
     const i=chk.dataset.i, k=parseFloat(g('p-kg'+i));
     if(!(k>0)) return;
     const sf=g('p-sf'+i);
+    const fm=(PREV.items[i]&&PREV.items[i].fmt)||'—';
     D.ocs.push({id:uid(),ts:AHORA(),cli:c,num:(base||'s/n')+(sf?' · '+sf:''),sinoc:!base,ref:'',
-      fec,art:g('p-art'+i)||'—',fmt:'—',kg:k,fe:g('p-fe'+i)});
+      fec,art:g('p-art'+i)||'—',fmt:fm,kg:k,fe:g('p-fe'+i)});
     n++;
   });
   if(!n){toast('No hay ninguna línea con kilos cargados');return;}
   cerrarModal();
-  cli=c; view='ocs'; save(); toast(n===1?'OC cargada':n+' OC cargadas');
+  linea=lineaDe(c); cli=c; view='ocs'; save(); toast(n===1?'OC cargada':n+' OC cargadas');
 }
 
 /* ================= editar un pedido ================= */
@@ -1346,11 +1555,11 @@ async function procesar(files){
   if(f.length>1) pst.textContent=`Se procesa de a uno. Empiezo con ${f[0].name}; volvé a arrastrar el resto después.`;
   else pst.textContent='Leyendo '+f[0].name+'…';
   try{
-    const raw=await pdfTexto(f[0]);
-    if(raw.replace(/\s/g,'').length<40){
+    const lec=await pdfTexto(f[0]);
+    if(lec.crudo.replace(/\s/g,'').length<40){
       pst.textContent='El PDF no tiene texto: parece un escaneo o una imagen. Cargalo a mano.'; return;}
     pst.textContent='';
-    revisar(parsePDF(raw),raw,f[0].name);
+    revisar(parsePDF(lec.crudo,lec.fino),lec.fino||lec.crudo,f[0].name);
   }catch(err){ pst.textContent=err.message||'No se pudo leer el PDF.'; }
 }
 
