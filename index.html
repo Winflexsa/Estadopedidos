@@ -705,7 +705,7 @@ function vOcs(){
       <td>${esc(o.art)}</td><td class="mini">${esc(o.fmt)}</td><td class="n">${kg(o.kg)}</td><td class="n">${kg(c.ent)}</td>
       <td class="n" style="font-weight:700;color:${c.exceso?'var(--naranja)':(c.abierta?'var(--naranja)':'var(--verde)')}">
       ${c.exceso?'+'+kg(c.exceso):kg(c.saldo)}</td><td class="num">${fd(o.fe)}</td>
-      <td><button class="btn danger" data-delo="${o.id}">Borrar</button></td></tr>`;}).join('')+
+      <td style="white-space:nowrap"><button class="btn solo-admin" data-edito="${o.id}">Editar</button> <button class="btn danger" data-delo="${o.id}">Borrar</button></td></tr>`;}).join('')+
    `</tbody></table>`:`<p class="mini">Sin órdenes cargadas para este cliente.</p>`);
 }
 
@@ -1476,10 +1476,15 @@ function editar(id){
     const v=i=>document.getElementById(i).value.trim();
     const k=parseFloat(v('ed-kg'));
     if(!(k>0)){toast('Los kg pedidos tienen que ser mayores a cero');return;}
-    if(!v('ed-num')){toast('Falta el número de OC');return;}
+    if(!v('ed-num')&&!o.sinoc){toast('Falta el número de OC');return;}
+    if(!v('ed-num')&&o.sinoc) document.getElementById('ed-num').value=o.num;
+    const antes=o.kg;
     Object.assign(o,{num:v('ed-num'),fec:v('ed-fec'),kg:k,fe:v('ed-fe'),
                      art:v('ed-art')||'—',fmt:v('ed-fmt')||'—',ref:v('ed-ref'),ts:AHORA()});
-    cerrarModal(); save(); toast('Pedido actualizado');
+    let msg='Pedido actualizado';
+    if(k>antes&&o.cerradaManual&&calc(o).saldo>0.05){ delete o.cerradaManual; msg='Pedido actualizado y reabierto (subieron los kg)'; }
+    if(k!==antes) msg+=` · ${kg(antes)} → ${kg(k)} kg`;
+    cerrarModal(); save(); toast(msg);
   };
 }
 document.body.addEventListener('click',e=>{
