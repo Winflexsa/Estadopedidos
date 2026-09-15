@@ -591,8 +591,9 @@ function asegurarLineas(){
   D.clientes.forEach(n=>{ if(!D.cliLinea[n]) D.cliLinea[n]='petpe'; });
 }
 const lineaDe=n=>(D.cliLinea&&D.cliLinea[n])||'petpe';
-const nomLinea=k=>(LINEAS.find(l=>l.k===k)||LINEAS[0]).n;
-const cliDe=k=>D.clientes.filter(n=>lineaDe(n)===k);
+const TODAS='todas';   /* pseudo-linea: suma de todas las lineas */
+const nomLinea=k=>k===TODAS?'Total':(LINEAS.find(l=>l.k===k)||LINEAS[0]).n;
+const cliDe=k=>k===TODAS?LINEAS.reduce((a,l)=>a.concat(cliDe(l.k)),[]):D.clientes.filter(n=>lineaDe(n)===k);
 const cliDeLinea=()=>cliDe(linea);
 
 let linea='petpe';
@@ -774,22 +775,22 @@ function vTot(){
     .sort((a,b)=>(a.o.fe||'9')<(b.o.fe||'9')?-1:1);
   document.getElementById('v-tot').innerHTML=`
   <div class="card"><h2>Pendiente por cliente · ${esc(nomLinea(linea))}</h2>
-   <table class="tot-tbl"><thead><tr><th>Cliente</th><th class="n">OC abiertas</th><th class="n">Vencidas</th>
+   <table class="tot-tbl"><thead><tr>${linea===TODAS?'<th>Línea</th>':''}<th>Cliente</th><th class="n">OC abiertas</th><th class="n">Vencidas</th>
     <th class="n">Pedido</th><th class="n">Entregado</th><th class="n">Pendiente</th><th class="n">De más</th></tr></thead><tbody>
-   ${filas.map(f=>`<tr><td class="cli">${esc(f.n)}
+   ${filas.map(f=>`<tr>${linea===TODAS?`<td class="mini">${esc(nomLinea(lineaDe(f.n)))}</td>`:''}<td class="cli">${esc(f.n)}
      ${f.ped?`<div class="minibar" title="${(f.ent/f.ped*100).toFixed(0)}% entregado"><i style="width:${Math.min(100,f.ent/f.ped*100)}%"></i></div>`:''}</td><td class="n">${f.ab}</td>
      <td class="n" style="${f.ve?'color:var(--rojo);font-weight:600':''}">${f.ve||'—'}</td>
      <td class="n">${kg(f.ped)}</td><td class="n">${kg(f.ent)}</td>
      <td class="n" style="font-weight:600">${kg(f.pen)}</td>
      <td class="n" style="${f.ex?'color:var(--naranja)':''}">${f.ex?'+'+kg(f.ex):'—'}</td></tr>`).join('')}
-   <tr class="sum"><td>Total</td><td class="n">${T('ab')}</td><td class="n">${T('ve')||'—'}</td>
+   <tr class="sum">${linea===TODAS?'<td></td>':''}<td>Total</td><td class="n">${T('ab')}</td><td class="n">${T('ve')||'—'}</td>
      <td class="n">${kg(T('ped'))}</td><td class="n">${kg(T('ent'))}</td><td class="n">${kg(T('pen'))}</td>
      <td class="n">${T('ex')?'+'+kg(T('ex')):'—'}</td></tr>
    </tbody></table></div>
   <div class="card"><h2>OC abiertas de ${esc(nomLinea(linea))} · por fecha de entrega</h2>
-   ${todas.length?`<table><thead><tr><th>Cliente</th><th>OC</th><th>Artículo</th><th>Entrega</th>
+   ${todas.length?`<table><thead><tr>${linea===TODAS?'<th>Línea</th>':''}<th>Cliente</th><th>OC</th><th>Artículo</th><th>Entrega</th>
      <th class="n">Atraso</th><th class="n">Pendiente</th></tr></thead><tbody>
-    ${todas.map(({o,c})=>`<tr><td class="mini">${esc(o.cli)}</td><td class="num" style="font-weight:600">${esc(o.num)}</td>
+    ${todas.map(({o,c})=>`<tr>${linea===TODAS?`<td class="mini">${esc(nomLinea(lineaDe(o.cli)))}</td>`:''}<td class="mini">${esc(o.cli)}</td><td class="num" style="font-weight:600">${esc(o.num)}</td>
       <td class="mini">${esc(o.art)}</td><td class="num">${fd(o.fe)}</td>
       <td class="n" style="${c.atraso>0?'color:var(--rojo);font-weight:600':'color:var(--gris)'}">${c.atraso>0?c.atraso+' d':'—'}</td>
       <td class="n" style="font-weight:600">${kg(c.saldo)}</td></tr>`).join('')}
@@ -805,16 +806,25 @@ function pintarLineas(){
       const ve=os.filter(x=>x.c.atraso>0).length;
       return `<button role="tab" data-l="${l.k}" aria-selected="${l.k===linea}">${esc(l.n)}`+
         `<span class="lp">${kg(pen)} kg</span>${ve?`<span class="lv" title="OC vencidas">${ve}</span>`:''}</button>`;
-    }).join('');
+    }).join('')
+    +(()=>{
+      const os=D.ocs.map(o=>({o,c:calc(o)}));
+      const pen=os.reduce((s,x)=>s+Math.max(0,x.c.saldo),0);
+      const ve=os.filter(x=>x.c.atraso>0).length;
+      return `<button role="tab" data-l="${TODAS}" aria-selected="${linea===TODAS}" style="font-weight:700">Total`+
+        `<span class="lp">${kg(pen)} kg</span>${ve?`<span class="lv" title="OC vencidas">${ve}</span>`:''}</button>`;
+    })();
 }
 
 function render(){
   asegurarLineas();
-  const dela=cliDeLinea();
+  const dela=cliDeLinea(), todas=linea===TODAS;
+  if(todas) cli=TOT;
   if(cli!==TOT&&!dela.includes(cli)) cli=dela[0]||TOT;
   pintarLineas();
-  document.getElementById('clientes').innerHTML=
-    dela.map(c=>`<button role="tab" data-c="${esc(c)}" aria-selected="${c===cli}"><i></i>${esc(c)}</button>`).join('')
+  document.getElementById('clientes').innerHTML=todas
+    ?`<button role="tab" data-c="${TOT}" aria-selected="true">Totales · todas las líneas</button>`
+    :dela.map(c=>`<button role="tab" data-c="${esc(c)}" aria-selected="${c===cli}"><i></i>${esc(c)}</button>`).join('')
     +`<span class="sep"></span>`
     +`<button role="tab" data-c="${TOT}" aria-selected="${cli===TOT}">Totales</button>`
     +`<button class="add" data-c="__new">+ Cliente</button>`;
@@ -848,7 +858,7 @@ document.querySelector('nav').onclick=e=>{const b=e.target.closest('button[data-
 document.getElementById('lineas').onclick=e=>{
   const b=e.target.closest('[data-l]'); if(!b)return;
   if(b.dataset.l===linea) return;
-  linea=b.dataset.l; cli=cliDeLinea()[0]||TOT; open={}; view='pend'; render();};
+  linea=b.dataset.l; cli=linea===TODAS?TOT:(cliDeLinea()[0]||TOT); open={}; view='pend'; render();};
 document.getElementById('clientes').onclick=e=>{
   const b=e.target.closest('[data-c]'); if(!b)return;
   const v=b.dataset.c;
