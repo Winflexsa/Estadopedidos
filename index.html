@@ -325,7 +325,7 @@ pre.raw{background:var(--line2);border-radius:9px;padding:12px;font-family:var(-
       <h2>Cargar OC desde PDF</h2>
       <div class="drop" id="drop" role="button" tabindex="0">
         <b>Arrastrá el PDF acá o hacé clic para elegirlo</b>
-        <span>Lee solo el formato de Don Yeyo, Molinos, La Italiana y El Artesano en PET/PE, y Silmag, Colgate, Blibox y Bligraf en PET. El resto se carga a mano. Siempre revisás antes de guardar.</span>
+        <span>Lee solo el formato de Don Yeyo, Molinos, La Italiana y El Artesano en PET/PE, y Silmag, Colgate, Blibox, Bligraf y Bioprotece en PET. El resto se carga a mano. Siempre revisás antes de guardar.</span>
       </div>
       <input type="file" id="filePdf" accept="application/pdf" multiple class="hidden">
       <p class="mini" id="pdfState" style="margin-top:10px"></p>
@@ -1239,10 +1239,33 @@ function lineasGenericas(T){
   return out;
 }
 
-function parsePDF(txt,txtFino){
+function parsePDF(txt,txtFino,nombre){
   const T=txt.replace(/\u00a0/g,' ');
   const TF=(txtFino||txt).replace(/\u00a0/g,' ');   /* lectura fina, para los parsers nuevos */
   const F=plano(TF);
+
+  /* --- Bioprotece (nota de pedido) ---
+     Las etiquetas en negrita vienen con la fuente corrida 29 lugares (Nro -> 1UR, Pag -> 3DJ),
+     asi que el numero se busca de tres formas: tal cual, decodificando el corrido, o del nombre del archivo. */
+  if(/BIOPROTECE|30-70865890-8/i.test(F)){
+    let num=(F.match(/\b(\d{4}-\d{8})\b/)||[])[1]||'';
+    if(!num){
+      const dec=F.split('').map(c=>{const k=c.charCodeAt(0);return k>0&&k<48?String.fromCharCode(k+29):c;}).join('');
+      num=(dec.match(/\b(\d{4}-\d{8})\b/)||[])[1]||'';
+    }
+    if(!num&&nombre) num=(nombre.match(/(\d{3,})/)||[])[1]||'';
+    if(/^\d{4}-\d{8}$/.test(num)) num=String(parseInt(num.split('-')[1],10));
+    const fec=iso((F.match(/Fecha y Hora:?\s*(\d{2}\/\d{2}\/\d{4})/i)||[])[1]);
+    const it=[], ls=T.split('\n');
+    ls.forEach((l,ix)=>{
+      const m=l.match(/^\s*(\d{5})\s+([\d.,]+)\s+(.+?)\s+(Unid\.?|Kgs?\.?|KG)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s*$/i);
+      if(!m) return;
+      const fe=iso((((ls[ix+1]||'')+' '+(ls[ix+2]||'')).match(/(\d{2}\/\d{2}\/\d{4})/)||[])[1]);
+      const uni=/^unid/i.test(m[4]);
+      it.push({art:(m[1]+' \u00b7 '+m[3]).replace(/\s+/g,' ').trim(),kg:pnum(m[2]),fe,fmt:uni?'unidades':'kg'});
+    });
+    return {cli:'Bioprotece',num,fec,items:sinRepetidos(it)};
+  }
 
   /* --- Silmag --- */
   if(/SILMAG/i.test(TF)||/30708212659/.test(F)){
@@ -1564,7 +1587,7 @@ async function procesar(files){
     if(lec.crudo.replace(/\s/g,'').length<40){
       pst.textContent='El PDF no tiene texto: parece un escaneo o una imagen. Cargalo a mano.'; return;}
     pst.textContent='';
-    revisar(parsePDF(lec.crudo,lec.fino),lec.fino||lec.crudo,f[0].name);
+    revisar(parsePDF(lec.crudo,lec.fino,f[0].name),lec.fino||lec.crudo,f[0].name);
   }catch(err){ pst.textContent=err.message||'No se pudo leer el PDF.'; }
 }
 
