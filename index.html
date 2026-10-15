@@ -448,6 +448,109 @@ html.celu.celu-zoom .ovl .modal{min-height:var(--wfh)}
 html.celu .modal h2{font-size:19px;padding-right:44px}
 html.celu .cerrar{width:40px;height:40px;font-size:24px}
 html.celu .login-box{padding:30px 22px}
+/* ── Dashboard (mismo estilo que Termoformado y PET Chivilcoy) ── */
+#v-dash{--d-g:#15a463;--d-gd:#0e7a49;--d-gdd:#0a5e38;--d-gl:#e4f6ec;--d-gl2:#d2eedd;--d-t:#19211b;--d-t2:#5c665e;--d-t3:#94a096;--d-b:#dde4dd;--d-b2:#cbd5cb;--d-ok:#0e7a49;--d-mid:#b07d13;--d-bad:#a33b3b;
+  --d-sh:0 1px 2px rgba(20,40,25,.04),0 2px 10px rgba(20,40,25,.05);--d-sh2:0 4px 18px rgba(20,40,25,.10)}
+#v-dash .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.dd-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin:2px 0 14px}
+.dd-title{font-family:var(--disp);font-size:20px;font-weight:700;color:var(--d-t)}
+.dd-sub{font-size:12.5px;color:var(--d-t3);margin-top:2px}
+.dd-seg{display:inline-flex;background:#e6ede9;border-radius:11px;padding:3px;gap:2px}
+.dd-seg button{border:0;background:none;font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--d-t2);padding:6px 12px;border-radius:9px;cursor:pointer}
+.dd-seg button.on{background:#fff;color:var(--d-gd);box-shadow:0 1px 4px rgba(20,40,25,.12)}
+.dd-x{background:none;border:0;color:var(--d-gd);font-size:12px;font-weight:600;cursor:pointer;padding:2px 0;font-family:inherit;white-space:nowrap}
+.dd-x:hover{text-decoration:underline}
+.dd-alert{display:flex;gap:10px;align-items:center;background:#fdf0ef;border:1px solid #f3d3d0;color:#8a3a3a;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:13px}
+.dd-alert b{font-weight:700}
+.dd-top{display:grid;grid-template-columns:2.1fr 1fr;gap:14px;margin-bottom:6px}
+.dd-live,.dd-box{background:#fff;border:1px solid var(--d-b);border-radius:14px;box-shadow:var(--d-sh);padding:16px 18px;min-width:0}
+.dd-live{background:linear-gradient(160deg,#eaf7f0 0%,#fff 55%);border-color:var(--d-gl2)}
+.dd-k{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--d-gd)}
+.dd-lh{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.dd-lt{font-size:13.5px;color:var(--d-t2);margin-top:3px}.dd-lt b{color:var(--d-t);font-weight:600}
+.dd-est{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;border-radius:999px;padding:5px 12px;border:1px solid}
+.dd-est i{width:8px;height:8px;border-radius:50%;background:currentColor}
+.dd-est.ok{color:#0e7a49;background:#e4f6ec;border-color:#c6e9d5}
+.dd-est.warn{color:#8f6a14;background:#fbf3df;border-color:#efdfb2}
+.dd-est.bad{color:#a8464a;background:#fdf0ef;border-color:#f3d3d0}
+.dd-main{display:flex;align-items:flex-end;gap:34px;margin:16px 0 12px;flex-wrap:wrap}
+.dd-big b{display:block;font-family:var(--mono);font-size:44px;font-weight:500;color:var(--d-gdd);line-height:1;letter-spacing:-.03em}
+.dd-big span,.dd-ef span{font-size:12px;color:var(--d-t3)}
+.dd-ef b{display:block;font-family:var(--mono);font-size:24px;font-weight:500;line-height:1.1}
+.dd-bar{position:relative;height:10px;border-radius:999px;background:rgba(0,0,0,.06);overflow:hidden}
+.dd-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#2fa86b,#15a463);transition:width .4s}
+.dd-bl{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;color:var(--d-t3);margin-top:6px;flex-wrap:wrap}
+.dd-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 18px;margin-top:14px;padding-top:12px;border-top:1px dashed var(--d-gl2)}
+.dd-meta>div>span{display:block;font-size:11px;color:var(--d-t3);margin-bottom:2px}.dd-meta b{font-size:13px;font-weight:600;color:var(--d-t)}.dd-meta small{font-weight:400;color:var(--d-t3)}
+.dd-meta .bad b{color:var(--d-bad)}
+.dh-big{margin:6px 0 10px}.dh-big b{font-family:var(--mono);font-size:30px;font-weight:500;color:var(--d-gd)}.dh-big span{font-size:12px;color:var(--d-t3);margin-left:6px}
+.dh-t{display:grid;grid-template-columns:74px 1fr 84px;align-items:center;padding:6px 0;border-top:1px solid #edf1ed;font-size:13px}
+.dh-l{color:var(--d-t3);font-size:12px}.dh-t b{font-weight:500;color:var(--d-t2);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dh-e{text-align:right;font-family:var(--mono);font-size:12.5px;font-weight:600}
+.dh-cmp{font-size:11.5px;color:var(--d-t3);margin-top:8px}
+.dd-sec{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:22px 0 10px}
+.dd-sec h3,.dd-bh h3{margin:0;font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--d-gd)}
+.dd-note{font-size:11.5px;color:var(--d-t3)}
+.dd-bh{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.dd-stk{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.dsk{background:linear-gradient(180deg,#f1faf5,#fff 80%);border:1px solid var(--d-gl2);border-radius:14px;padding:13px 15px;box-shadow:var(--d-sh);cursor:pointer;transition:transform .12s,box-shadow .12s;min-width:0}
+.dsk:hover{transform:translateY(-1px);box-shadow:var(--d-sh2)}
+.dsk.neg{background:linear-gradient(180deg,#fdf3f2,#fff 80%);border-color:#f3d3d0}
+.dsk-h{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:12px;color:var(--d-t2);font-weight:600}
+.dsk-h span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dsk-l{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--d-t3);white-space:nowrap}
+.dsk-n{margin:10px 0 6px}.dsk-n b{font-family:var(--mono);font-size:26px;font-weight:500;color:var(--d-gdd);margin-right:5px;letter-spacing:-.03em}.dsk-n small{font-size:11.5px;color:var(--d-t3)}
+.dsk.neg .dsk-n b{color:var(--d-bad)}
+.dsk-b{height:5px;border-radius:999px;background:rgba(0,0,0,.06);overflow:hidden;margin-bottom:8px}.dsk-b i{display:block;height:100%;background:#2fa86b;border-radius:999px}
+.dsk-f{display:flex;justify-content:space-between;gap:6px;font-size:11.5px;color:var(--d-t3)}.dsk-f .bad{color:var(--d-bad);font-weight:600}.dsk-f .ok{color:var(--d-ok);font-weight:600}
+.dd-two{display:grid;grid-template-columns:1.15fr 1fr;gap:14px;margin-top:22px}
+.dd-pk{display:grid;grid-template-columns:repeat(4,1fr);background:linear-gradient(180deg,var(--d-gl),#fff 80%);border:1px solid var(--d-gl2);border-radius:12px;margin-bottom:12px}
+.dd-pk>div{padding:9px 12px;border-left:1px solid var(--d-gl2);min-width:0}.dd-pk>div:first-child{border-left:none}
+.dd-pk b{display:block;font-family:var(--mono);font-size:19px;font-weight:500;color:var(--d-gd)}.dd-pk span{font-size:11px;color:var(--d-t3)}
+.dd-pk .bad b{color:var(--d-bad)}
+.dp-tt{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--d-t3);margin:10px 0 6px}.dp-tt.bad{color:#a8464a}
+.dp-r{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 4px;border-top:1px solid #edf1ed;cursor:pointer;font-size:13px}.dp-r:hover{background:#f6faf7}
+.dp-c{display:flex;flex-direction:column;min-width:0}.dp-c b{font-weight:600;color:var(--d-t)}.dp-c span{font-size:11.5px;color:var(--d-t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dp-s{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.dp-k{font-family:var(--mono);font-weight:600;font-size:12.5px}
+.dp-st{font-size:10.5px;font-weight:600;border-radius:999px;padding:2px 8px}.dp-st.ok{background:#e4f6ec;color:#0e7a49}.dp-st.bad{background:#fdf0ef;color:#a8464a}.dp-st.mid{background:#fbf3df;color:#8f6a14}.dp-st.off{background:#f0f3f1;color:var(--d-t3)}
+.dp-ok{font-size:13px;color:var(--d-ok);padding:6px 2px}.dp-more{font-size:11.5px;color:var(--d-t3);padding:6px 4px}
+.ch-w{display:flex;gap:6px;align-items:stretch;height:190px}
+.ch-c{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
+.ch-v{font-family:var(--mono);font-size:10.5px;color:var(--d-t2);height:16px;white-space:nowrap}
+.ch-b{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center}
+.ch-s{display:flex;flex-direction:column-reverse;width:72%;max-width:38px;border-radius:7px 7px 3px 3px;overflow:hidden;min-height:2px}
+.ch-s i{display:block;width:100%}
+.ch-d{font-size:10.5px;color:var(--d-t3);white-space:nowrap;margin-top:4px}.ch-d.hoy{color:var(--d-gd);font-weight:700}
+.ch-leg{display:flex;gap:16px;justify-content:flex-end;font-size:11px;color:var(--d-t3);margin-top:8px}.ch-leg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.dd-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.dd-kpi{background:#fff;border:1px solid var(--d-b);border-radius:13px;padding:14px 16px;box-shadow:var(--d-sh)}
+.dd-kpi span{font-size:11px;color:var(--d-t3);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.dd-kpi b{display:block;font-family:var(--mono);font-size:24px;font-weight:500;color:var(--d-t);margin-top:4px;letter-spacing:-.03em}
+.dd-kpi small{font-size:11.5px;color:var(--d-t3)}
+.dd-mix{margin:12px 2px 6px}.dm-bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:#eef3ef}.dm-bar i{display:block;height:100%}
+.dm-l{display:flex;gap:18px;font-size:12px;color:var(--d-t2);margin-top:7px;flex-wrap:wrap}.dm-l i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px}
+#v-dash details.dd-dd{background:#fff;border:1px solid var(--d-b);border-radius:14px;box-shadow:var(--d-sh);padding:12px 18px;margin-top:12px}
+#v-dash details.dd-dd>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px}
+#v-dash details.dd-dd>summary::-webkit-details-marker{display:none}
+#v-dash details.dd-dd>summary h3{margin:0;font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--d-gd)}
+#v-dash details.dd-dd>summary .ch{color:var(--d-t3);transition:transform .15s}
+#v-dash details.dd-dd[open]>summary .ch{transform:rotate(180deg)}
+.dd-tbl{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+.dd-tbl th{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--d-t3);text-align:left;padding:6px 8px;border-bottom:1px solid var(--d-b)}
+.dd-tbl td{padding:7px 8px;border-bottom:1px solid #edf1ed}.dd-tbl .n{text-align:right;font-family:var(--mono);white-space:nowrap}
+.dd-tw{overflow-x:auto}
+body[data-dash="1"] .clientes-wrap,body[data-dash="1"] #kpis,body[data-dash="1"] .nav-wrap,body[data-dash="1"] #cliBtn,body[data-dash="1"] #subnav{display:none!important}
+.lineas button[data-l="dash"]{gap:6px}
+@media(max-width:1000px){.dd-top,.dd-two{grid-template-columns:1fr}.dd-kpis{grid-template-columns:1fr 1fr}}
+html.celu .dd-top,html.celu .dd-two{grid-template-columns:1fr}
+html.celu .dd-meta{grid-template-columns:1fr 1fr}
+html.celu .dd-pk{grid-template-columns:1fr 1fr}html.celu .dd-pk>div:nth-child(3){border-left:none}
+html.celu .dd-stk{grid-template-columns:1fr 1fr;gap:9px}html.celu .dsk{padding:11px 12px}html.celu .dsk-n b{font-size:19px}html.celu .dsk-f{flex-direction:column;gap:2px}
+html.celu .dd-big b{font-size:36px}html.celu .ch-w{height:150px}html.celu .ch-v{display:none}html.celu .dd-kpis{grid-template-columns:1fr 1fr}
+html.celu .lineas button[data-l=dash]{flex:0 0 auto;padding:10px 14px;font-size:18px}html.celu .lineas .dlt{display:none}
+html.celu .ch-c:nth-child(even):not(:last-child) .ch-d{visibility:hidden}html.celu .ch-d{font-size:9.5px}
+html.celu .dd-head .dd-seg{width:100%}html.celu .dd-head .dd-seg button{flex:1;padding:10px 4px;font-size:14px}
+
 .vista-sw{display:block;margin:20px auto;padding:10px 16px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--gris2);font-size:12.5px;font-weight:600;cursor:pointer}
 </style>
 </head>
@@ -502,6 +605,7 @@ html.celu .login-box{padding:30px 22px}
 </nav></div>
 
 <main>
+  <section id="v-dash" class="hidden"></section>
   <section id="v-pend"></section>
 
   <section id="v-ocs" class="hidden">
@@ -777,11 +881,12 @@ function asegurarLineas(){
 }
 const lineaDe=n=>(D.cliLinea&&D.cliLinea[n])||'petpe';
 const TODAS='todas';   /* pseudo-linea: suma de todas las lineas */
-const nomLinea=k=>k===TODAS?'Total':(LINEAS.find(l=>l.k===k)||LINEAS[0]).n;
+const nomLinea=k=>k===DASH?'Dashboard':k===TODAS?'Total':(LINEAS.find(l=>l.k===k)||LINEAS[0]).n;
 const cliDe=k=>k===TODAS?LINEAS.reduce((a,l)=>a.concat(cliDe(l.k)),[]):D.clientes.filter(n=>lineaDe(n)===k);
 const cliDeLinea=()=>cliDe(linea);
 
-let linea='petpe';
+const DASH='dash';
+let linea=DASH;
 asegurarLineas();
 let cli=cliDeLinea()[0], view='pend', open={};
 
@@ -983,7 +1088,9 @@ function vTot(){
 }
 
 function pintarLineas(){
-  document.getElementById('lineas').innerHTML='<span class="tit">Linea</span>'+
+  document.getElementById('lineas').innerHTML=
+    `<button role="tab" data-l="${DASH}" aria-selected="${linea===DASH}">📊<span class="dlt"> Dashboard</span></button>`+
+    '<span class="tit">Linea</span>'+
     LINEAS.map(l=>{
       const cs=cliDe(l.k);
       const os=D.ocs.filter(o=>cs.includes(o.cli)).map(o=>({o,c:calc(o)}));
@@ -1007,6 +1114,14 @@ function render(){
   if(todas) cli=TOT;
   if(cli!==TOT&&!dela.includes(cli)) cli=dela[0]||TOT;
   pintarLineas();
+  document.body.dataset.dash=linea===DASH?'1':'';
+  if(linea===DASH){
+    ['pend','ocs','ent','ale','tot'].forEach(v=>document.getElementById('v-'+v).classList.add('hidden'));
+    document.getElementById('v-dash').classList.remove('hidden');
+    try{vDash();}catch(e){console.error('[dashboard]',e);}
+    return;
+  }
+  document.getElementById('v-dash').classList.add('hidden');
   document.getElementById('clientes').innerHTML=todas
     ?`<button role="tab" data-c="${TOT}" aria-selected="true">Totales · todas las líneas</button>`
     :dela.map(c=>`<button role="tab" data-c="${esc(c)}" aria-selected="${c===cli}"><i></i>${esc(c)}</button>`).join('')
@@ -1038,12 +1153,180 @@ function render(){
   document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===view));
 }
 
+/* ════════ DASHBOARD (estilo Termoformado / PET Chivilcoy) ════════ */
+let dashL=TODAS, dashPer='mes';
+const tn=n=>(n/1000).toLocaleString('es-AR',{minimumFractionDigits:1,maximumFractionDigits:1});
+const kg0=n=>Math.round(n||0).toLocaleString('es-AR');
+const ddmm=s=>s?s.slice(8,10)+'/'+s.slice(5,7):'—';
+const COLS=['#0e7a49','#2fa86b','#6cc496','#a7dcbf','#d2eedd','#cbd5cb'];
+function remitos(es){return new Set(es.map(e=>e.cli+'|'+(e.comp||e.fec))).size;}
+function vDash(){
+  const box=document.getElementById('v-dash');
+  const cls=cliDe(dashL);
+  const os=D.ocs.filter(o=>cls.includes(o.cli)).map(o=>({o,c:calc(o)}));
+  const om={}; os.forEach(x=>om[x.o.id]=x.o);
+  const E=D.entregas.filter(e=>om[e.oc]).map(e=>({...e,cli:om[e.oc].cli,lin:lineaDe(om[e.oc].cli)})).sort((a,b)=>a.fec<b.fec?1:-1);
+  const ab=os.filter(x=>x.c.abierta);
+  const S=(a,f)=>a.reduce((s,x)=>s+f(x),0);
+  const pend=S(ab,x=>x.c.saldo), pedAb=S(ab,x=>x.o.kg), entAb=S(ab,x=>x.c.ent);
+  const H=hoy(), lim=new Date(Date.now()+15*864e5).toISOString().slice(0,10);
+  const venc=ab.filter(x=>x.c.atraso>0).sort((a,b)=>b.c.atraso-a.c.atraso);
+  const prox=ab.filter(x=>x.o.fe&&x.c.atraso<=0&&x.o.fe<=lim).sort((a,b)=>a.o.fe<b.o.fe?-1:1);
+  const sinf=ab.filter(x=>!x.o.fe);
+  const kV=S(venc,x=>x.c.saldo), kP=S(prox,x=>x.c.saldo), kS=S(sinf,x=>x.c.saldo);
+  const mes=H.slice(0,7), Em=E.filter(e=>e.fec.slice(0,7)===mes), kMes=S(Em,e=>e.kg);
+  const d7=new Date(Date.now()-6*864e5).toISOString().slice(0,10), d14=new Date(Date.now()-13*864e5).toISOString().slice(0,10);
+  const E7=E.filter(e=>e.fec>=d7&&e.fec<=H), E14=E.filter(e=>e.fec>=d14&&e.fec<d7);
+  const nCli=new Set(ab.map(x=>x.o.cli)).size;
+  const est=venc.length?`<span class="dd-est bad"><i></i>${venc.length} OC vencida${venc.length>1?'s':''}</span>`
+           :prox.length?`<span class="dd-est warn"><i></i>${prox.length} vencen en 15 días</span>`
+           :`<span class="dd-est ok"><i></i>Todo al día</span>`;
+  const ult=E[0];
+  const pct=pedAb?entAb/pedAb*100:0;
+  const seg=(arr,cur,attr)=>`<div class="dd-seg">${arr.map(([k,n])=>`<button data-${attr}="${k}" class="${k===cur?'on':''}">${n}</button>`).join('')}</div>`;
+  const tagLin=n=>dashL===TODAS?`<span class="dsk-l">${esc(nomLinea(lineaDe(n)))}</span>`:'';
+
+  /* --- tarjetas por cliente --- */
+  const porCli={}; ab.forEach(x=>{const p=porCli[x.o.cli]||(porCli[x.o.cli]={n:x.o.cli,pen:0,ped:0,ent:0,ab:0,ve:0,kv:0,fe:''});
+    p.pen+=x.c.saldo;p.ped+=x.o.kg;p.ent+=x.c.ent;p.ab++; if(x.c.atraso>0){p.ve++;p.kv+=x.c.saldo;}
+    if(x.o.fe&&x.c.atraso<=0&&(!p.fe||x.o.fe<p.fe))p.fe=x.o.fe;});
+  const cards=Object.values(porCli).sort((a,b)=>b.pen-a.pen).map(p=>`<div class="dsk ${p.ve?'neg':''}" data-gc="${esc(p.n)}">
+    <div class="dsk-h"><span>${esc(p.n)}</span>${tagLin(p.n)}</div>
+    <div class="dsk-n"><b>${kg0(p.pen)}</b><small>kg pendientes</small></div>
+    <div class="dsk-b"><i style="width:${p.ped?Math.min(100,p.ent/p.ped*100):0}%"></i></div>
+    <div class="dsk-f"><span>${p.ab} OC abierta${p.ab>1?'s':''}</span>${p.ve?`<span class="bad">${p.ve} vencida${p.ve>1?'s':''} · ${kg0(p.kv)} kg</span>`
+      :(p.fe?`<span>próx. ${ddmm(p.fe)}</span>`:`<span>sin fecha</span>`)}</div></div>`).join('');
+
+  /* --- vencidas y próximas --- */
+  const row=x=>{const t=x.c.atraso>0?`<span class="dp-st bad">hace ${x.c.atraso} d</span>`
+      :(x.o.fe?`<span class="dp-st mid">${-x.c.atraso===0?'hoy':'en '+(-x.c.atraso)+' d'}</span>`:`<span class="dp-st off">sin fecha</span>`);
+    return `<div class="dp-r" data-gc="${esc(x.o.cli)}"><div class="dp-c"><b>${esc(x.o.cli)} · ${x.o.sinoc?'':'OC '}${esc(x.o.num)}</b>
+      <span>${esc(x.o.art)}${x.o.fmt&&x.o.fmt!=='—'?' · '+esc(x.o.fmt):''}</span></div>
+      <div class="dp-s"><span class="dp-k">${kg0(x.c.saldo)} kg</span>${t}</div></div>`;};
+  const lista=(arr,n)=>arr.slice(0,n).map(row).join('')+(arr.length>n?`<div class="dp-more">y ${arr.length-n} más…</div>`:'');
+
+  /* --- pendiente por artículo --- */
+  const porArt={}; ab.forEach(x=>{const k=x.o.art||'—';const a=porArt[k]||(porArt[k]={k,kg:0,cl:new Set()});a.kg+=x.c.saldo;a.cl.add(x.o.cli);});
+  const arts=Object.values(porArt).sort((a,b)=>b.kg-a.kg);
+  const maxA=arts.length?arts[0].kg:1;
+
+  /* --- gráfico: entregas por semana (12 semanas) --- */
+  const lunes=d=>{const x=new Date(d+'T12:00:00');const w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);return x.toISOString().slice(0,10);};
+  const sem=[]; {let l=lunes(H); for(let i=11;i>=0;i--){const x=new Date(l+'T12:00:00');x.setDate(x.getDate()-7*i);sem.push(x.toISOString().slice(0,10));}}
+  const lins=dashL===TODAS?LINEAS.map(l=>l.k):[dashL];
+  const colL={petpe:'#0e7a49',pet:'#6cc496'};
+  const sv=sem.map(w=>{const v={};lins.forEach(l=>v[l]=0);E.forEach(e=>{if(lunes(e.fec)===w&&v[e.lin]!=null)v[e.lin]+=e.kg;});return v;});
+  const tot=sv.map(v=>Object.values(v).reduce((a,b)=>a+b,0)), mx=Math.max(1,...tot);
+  const prom=tot.slice(0,11).reduce((a,b)=>a+b,0)/11;
+  const chart=`<div class="ch-w">${sem.map((w,i)=>`<div class="ch-c" title="Semana del ${fd(w)}: ${kg(tot[i])} kg">
+      <div class="ch-v">${tot[i]?tn(tot[i])+' t':''}</div>
+      <div class="ch-b"><div class="ch-s" style="height:${tot[i]/mx*100}%">${lins.map(l=>`<i style="height:${tot[i]?sv[i][l]/tot[i]*100:0}%;background:${colL[l]||'#2fa86b'}"></i>`).join('')}</div></div>
+      <div class="ch-d ${i===11?'hoy':''}">${i===11?'esta sem.':ddmm(w)}</div></div>`).join('')}</div>
+    <div class="ch-leg">${lins.length>1?lins.map(l=>`<span><i style="background:${colL[l]}"></i>${esc(nomLinea(l))}</span>`).join(''):''}<span>promedio 11 semanas: <b class="mono">${tn(prom)} t</b></span></div>`;
+
+  /* --- totales del período --- */
+  const desde=dashPer==='mes'?mes+'-01':dashPer==='anio'?H.slice(0,4)+'-01-01':'0000';
+  const Ep=E.filter(e=>e.fec>=desde&&e.fec<=H);
+  const kP2=S(Ep,e=>e.kg);
+  const idsP=new Set(Ep.map(e=>e.oc));
+  const cerr=os.filter(x=>idsP.has(x.o.id)&&!x.c.abierta).length;
+  const exP=os.filter(x=>idsP.has(x.o.id)).reduce((s,x)=>s+x.c.exceso,0);
+  const mixC={}; Ep.forEach(e=>mixC[e.cli]=(mixC[e.cli]||0)+e.kg);
+  let mix=Object.entries(mixC).sort((a,b)=>b[1]-a[1]); if(mix.length>5){const r=mix.slice(5).reduce((s,x)=>s+x[1],0);mix=mix.slice(0,5).concat([['Otros',r]]);}
+  const exc=os.filter(x=>x.c.exceso>0).sort((a,b)=>b.c.exceso-a.c.exceso);
+
+  box.innerHTML=`
+  <div class="dd-head"><div><div class="dd-title">Dashboard · Estado de pedidos</div>
+    <div class="dd-sub">Cómo vienen las entregas contra las órdenes de compra</div></div>
+    ${seg([[TODAS,'Todas'],...LINEAS.map(l=>[l.k,l.n])],dashL,'dl')}</div>
+  ${venc.length?`<div class="dd-alert">⚠ <span><b>${venc.length} OC vencida${venc.length>1?'s':''}</b> con <b>${kg0(kV)} kg</b> sin entregar. La más atrasada: ${esc(venc[0].o.cli)} · OC ${esc(venc[0].o.num)}, hace ${venc[0].c.atraso} días.</span></div>`:''}
+  <div class="dd-top">
+    <div class="dd-live">
+      <div class="dd-lh"><div><div class="dd-k">Pendiente de entrega</div>
+        <div class="dd-lt"><b>${nCli}</b> cliente${nCli!==1?'s':''} con pedidos abiertos · <b>${ab.length}</b> OC abiertas</div></div>${est}</div>
+      <div class="dd-main">
+        <div class="dd-big"><b>${kg0(pend)}</b><span>kg pendientes</span></div>
+        <div class="dd-ef"><b style="color:var(--d-gd)">${kg0(kMes)}</b><span>kg entregados este mes</span></div>
+        <div class="dd-ef"><b style="color:${kV?'var(--d-bad)':'var(--d-t3)'}">${kg0(kV)}</b><span>kg vencidos</span></div>
+      </div>
+      <div class="dd-bar"><div class="dd-fill" style="width:${Math.min(100,pct)}%"></div></div>
+      <div class="dd-bl"><span>Entregado <b class="mono">${kg0(entAb)}</b> de <b class="mono">${kg0(pedAb)}</b> kg pedidos en las OC abiertas</span><span>${pct.toFixed(0)}%</span></div>
+      <div class="dd-meta">
+        <div class="${venc.length?'bad':''}"><span>Vencidas</span><b>${venc.length} OC</b> <small>· ${kg0(kV)} kg</small></div>
+        <div><span>Vencen en 15 días</span><b>${prox.length} OC</b> <small>· ${kg0(kP)} kg</small></div>
+        <div><span>Sin fecha de entrega</span><b>${sinf.length} OC</b> <small>· ${kg0(kS)} kg</small></div>
+        <div><span>Remitos este mes</span><b>${remitos(Em)}</b></div>
+        <div><span>Entregado de más (total)</span><b>${kg0(S(exc,x=>x.c.exceso))} kg</b> <small>· ${exc.length} OC</small></div>
+        <div><span>Última entrega</span><b>${ult?fd(ult.fec):'—'}</b> <small>${ult?'· '+esc(ult.cli):''}</small></div>
+      </div>
+    </div>
+    <div class="dd-box">
+      <div class="dd-k">Entregas · últimos 7 días</div>
+      <div class="dh-big"><b>${kg0(S(E7,e=>e.kg))}</b><span>kg · ${remitos(E7)} remito${remitos(E7)!==1?'s':''}</span></div>
+      ${E7.length?E7.slice(0,7).map(e=>`<div class="dh-t"><span class="dh-l">${fd(e.fec)}</span><b title="${esc(e.cli)} · ${esc(e.comp)}">${esc(e.cli)}</b><span class="dh-e">${kg0(e.kg)} kg</span></div>`).join('')
+        +(E7.length>7?`<div class="dp-more">y ${E7.length-7} más…</div>`:'')
+        :`<div class="dp-more">No hubo entregas en los últimos 7 días.</div>`}
+      <div class="dh-cmp">Semana anterior: <b class="mono">${kg0(S(E14,e=>e.kg))}</b> kg</div>
+    </div>
+  </div>
+
+  <div class="dd-sec"><h3>Pendiente por cliente</h3><span class="dd-note">tocá un cliente para ver sus pedidos · barra = % entregado de sus OC abiertas</span></div>
+  <div class="dd-stk">${cards||`<div class="dp-ok">✓ No hay pedidos pendientes.</div>`}</div>
+
+  <div class="dd-two">
+    <div class="dd-box"><div class="dd-bh"><h3>Pedidos · vencidos y próximos</h3><button class="dd-x" data-gt="1">ver totales →</button></div>
+      <div class="dd-pk"><div class="${venc.length?'bad':''}"><b>${venc.length}</b><span>OC vencidas</span></div>
+        <div class="${kV?'bad':''}"><b>${tn(kV)} t</b><span>vencido</span></div>
+        <div><b>${tn(kP)} t</b><span>vence en 15 días</span></div><div><b>${tn(kS)} t</b><span>sin fecha</span></div></div>
+      ${venc.length?`<div class="dp-tt bad">Vencidas</div>${lista(venc,6)}`:`<div class="dp-ok">✓ Ninguna OC vencida.</div>`}
+      ${prox.length?`<div class="dp-tt">Próximos 15 días</div>${lista(prox,6)}`:''}
+      ${sinf.length?`<div class="dp-tt">Sin fecha de entrega</div>${lista(sinf.sort((a,b)=>b.c.saldo-a.c.saldo),4)}`:''}
+    </div>
+    <div class="dd-box"><div class="dd-bh"><h3>Pendiente por artículo</h3><span class="dd-note">${arts.length} artículo${arts.length!==1?'s':''}</span></div>
+      ${arts.length?arts.slice(0,10).map(a=>`<div class="dp-r" style="cursor:default;flex-direction:column;align-items:stretch;gap:5px">
+        <div style="display:flex;justify-content:space-between;gap:10px"><div class="dp-c"><b style="font-weight:500;font-size:12.5px">${esc(a.k)}</b><span>${esc([...a.cl].join(', '))}</span></div><span class="dp-k">${kg0(a.kg)} kg</span></div>
+        <div class="dsk-b" style="margin:0"><i style="width:${a.kg/maxA*100}%"></i></div></div>`).join('')
+        +(arts.length>10?`<div class="dp-more">y ${arts.length-10} más…</div>`:'')
+        :`<div class="dp-ok">✓ Nada pendiente.</div>`}
+    </div>
+  </div>
+
+  <div class="dd-sec"><h3>Entregas · últimas 12 semanas</h3><span class="dd-note">kg entregados por semana (lunes a domingo), según fecha de remito</span></div>
+  <div class="dd-box">${chart}</div>
+
+  <div class="dd-sec"><h3>Totales del período</h3>${seg([['mes','Este mes'],['anio','Este año'],['todo','Todo']],dashPer,'dp')}</div>
+  <div class="dd-kpis">
+    <div class="dd-kpi"><span>Kg entregados</span><b>${kg0(kP2)}</b><small>${tn(kP2)} toneladas</small></div>
+    <div class="dd-kpi"><span>Remitos</span><b>${remitos(Ep)}</b><small>${Ep.length} imputaciones a OC</small></div>
+    <div class="dd-kpi"><span>OC completadas</span><b>${cerr}</b><small>con entregas en el período</small></div>
+    <div class="dd-kpi"><span>Entregado de más</span><b style="color:${exP?'var(--naranja)':'inherit'}">${kg0(exP)}</b><small>kg en esas OC</small></div>
+  </div>
+  ${mix.length?`<div class="dd-mix"><div class="dm-bar">${mix.map((m,i)=>`<i style="width:${m[1]/kP2*100}%;background:${COLS[i]}" title="${esc(m[0])}: ${kg(m[1])} kg"></i>`).join('')}</div>
+    <div class="dm-l">${mix.map((m,i)=>`<span><i style="background:${COLS[i]}"></i>${esc(m[0])} · ${(m[1]/kP2*100).toFixed(0)}%</span>`).join('')}</div></div>`:''}
+
+  <details class="dd-dd"><summary><h3>OC con entregas de más (${exc.length})</h3><span class="ch">⌄</span></summary>
+    ${exc.length?`<div class="dd-tw"><table class="dd-tbl"><thead><tr><th>Cliente</th><th>OC</th><th>Artículo</th><th class="n">Pedido</th><th class="n">Entregado</th><th class="n">De más</th></tr></thead><tbody>
+    ${exc.map(x=>`<tr><td>${esc(x.o.cli)}</td><td class="mono">${esc(x.o.num)}</td><td class="mini">${esc(x.o.art)}</td><td class="n">${kg0(x.o.kg)}</td><td class="n">${kg0(x.c.ent)}</td><td class="n" style="color:var(--naranja);font-weight:600">+${kg0(x.c.exceso)} <small>(${(x.c.exceso/x.o.kg*100).toFixed(0)}%)</small></td></tr>`).join('')}
+    </tbody></table></div>`:`<p class="dp-ok">Ninguna.</p>`}</details>
+  <details class="dd-dd"><summary><h3>Últimas entregas registradas</h3><span class="ch">⌄</span></summary>
+    <div class="dd-tw"><table class="dd-tbl"><thead><tr><th>Fecha</th><th>Cliente</th><th>Remito</th><th>OC</th><th class="n">Kg</th><th class="n">Pallets</th></tr></thead><tbody>
+    ${E.slice(0,20).map(e=>`<tr><td class="mono">${fd(e.fec)}</td><td>${esc(e.cli)}</td><td class="mono">${esc(e.comp)}</td><td class="mono">${esc(om[e.oc].num)}</td><td class="n">${kg(e.kg)}</td><td class="n">${e.pal||'—'}</td></tr>`).join('')}
+    </tbody></table></div></details>`;
+}
+document.getElementById('v-dash').addEventListener('click',e=>{
+  const l=e.target.closest('[data-dl]'); if(l){dashL=l.dataset.dl;vDash();return;}
+  const p=e.target.closest('[data-dp]'); if(p){dashPer=p.dataset.dp;vDash();return;}
+  const g=e.target.closest('[data-gc]'); if(g){const c=g.dataset.gc; linea=lineaDe(c); cli=c; view='pend'; open={}; render(); try{window.scrollTo(0,0);}catch(_){} return;}
+  const t=e.target.closest('[data-gt]'); if(t){linea=dashL===TODAS?TODAS:dashL; cli=TOT; open={}; render(); try{window.scrollTo(0,0);}catch(_){} }
+});
+
 /* ---------- eventos ---------- */
 document.querySelector('nav').onclick=e=>{const b=e.target.closest('button[data-v]');if(b){view=b.dataset.v;render();}};
 document.getElementById('lineas').onclick=e=>{
   const b=e.target.closest('[data-l]'); if(!b)return;
   if(b.dataset.l===linea) return;
-  linea=b.dataset.l; cli=linea===TODAS?TOT:(cliDeLinea()[0]||TOT); open={}; view='pend'; render();};
+  linea=b.dataset.l; cli=linea===TODAS?TOT:(cliDeLinea()[0]||TOT); open={}; view='pend'; render();
+  try{window.scrollTo(0,0);}catch(e){}};
 document.getElementById('clientes').onclick=e=>{
   const b=e.target.closest('[data-c]'); if(!b)return;
   const v=b.dataset.c;
@@ -1849,7 +2132,7 @@ function wfVista(v){try{localStorage.setItem('wf_vista',v);}catch(e){} const u=n
   const CELU=document.documentElement.classList.contains('celu');
   if(!CELU){ if(window.WF_ES_TEL){const b=document.createElement('button');b.className='vista-sw';b.textContent='\uD83D\uDCF1 Ver versi\u00f3n celular';b.onclick=()=>wfVista('celu');document.body.appendChild(b);} return; }
   const $=i=>document.getElementById(i);
-  const TIT={pend:'Pendientes',ocs:'\u00d3rdenes',ent:'Entregas',ale:'Alertas',tot:'Totales'};
+  const TIT={dash:'Dashboard',pend:'Pendientes',ocs:'\u00d3rdenes',ent:'Entregas',ale:'Alertas',tot:'Totales'};
   const titulo=document.querySelector('header .logo .sub');
   let SUB='res';
   { const bo=document.querySelector('nav button[data-v=ocs]'); if(bo) bo.textContent='\u00d3rdenes'; }
@@ -1858,6 +2141,7 @@ function wfVista(v){try{localStorage.setItem('wf_vista',v);}catch(e){} const u=n
   function etiquetar(){
     document.querySelectorAll('main table').forEach(t=>{
       const ths=[...t.querySelectorAll('thead th')].map(x=>x.textContent.trim()); if(!ths.length) return;
+      if(t.closest('#v-dash')) return;
       t.classList.add('tc');
       const enDet=!!t.closest('.oc-det'), esTot=!!t.closest('#v-tot'), abiertas=esTot&&!t.classList.contains('tot-tbl');
       t.querySelectorAll('tbody tr').forEach(tr=>{
@@ -1880,7 +2164,7 @@ function wfVista(v){try{localStorage.setItem('wf_vista',v);}catch(e){} const u=n
   /* envolver render y vPend (que se llama solo al abrir/cerrar una tarjeta) */
   const _render=render;
   render=function(){ _render.apply(this,arguments);
-    const v=(cli===TOT)?'tot':view; document.body.dataset.view=v; document.body.dataset.sub=SUB;
+    const v=linea===DASH?'dash':(cli===TOT)?'tot':view; document.body.dataset.view=v; document.body.dataset.sub=SUB;
     if(titulo) titulo.textContent=TIT[v]||'OC y Entregas';
     $('cliBtnTxt').textContent=(linea===TODAS)?'Totales \u00b7 todas las l\u00edneas':(cli===TOT?'Totales \u00b7 '+nomLinea(linea):cli);
     document.querySelectorAll('#subnav button').forEach(b=>b.classList.toggle('on',b.dataset.s===SUB));
