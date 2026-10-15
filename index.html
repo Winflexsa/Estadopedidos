@@ -953,7 +953,7 @@ function vTot(){
     return {n, ab:ab.length, ve:os.filter(x=>x.c.atraso>0).length,
       ped:ab.reduce((s,x)=>s+x.o.kg,0), ent:ab.reduce((s,x)=>s+x.c.ent,0),
       pen:ab.reduce((s,x)=>s+x.c.saldo,0), ex:os.reduce((s,x)=>s+x.c.exceso,0)};
-  });
+  }).filter(f=>f.ab>0);   /* solo clientes con algo pendiente */
   const T=k=>filas.reduce((s,f)=>s+f[k],0);
   const dela=cliDeLinea();
   const todas=D.ocs.filter(o=>dela.includes(o.cli)).map(o=>({o,c:calc(o)})).filter(x=>x.c.abierta)
@@ -1031,7 +1031,7 @@ function render(){
     return;
   }
   document.getElementById('v-tot').classList.add('hidden');
-  document.getElementById('e-oc').innerHTML=ocsCli().map(o=>`<option value="${o.id}">${o.sinoc?'':'OC '}${esc(o.num)} — ${esc(o.fmt)}</option>`).join('')
+  document.getElementById('e-oc').innerHTML=ocsCli().map(o=>`<option value="${o.id}">${o.sinoc?'':'OC '}${esc(o.num)} — ${esc(o.art)} · ${esc(o.fmt)} · saldo ${kg(calc(o).saldo)} kg</option>`).join('')
     ||`<option value="">Cargá una OC primero</option>`;
   kpis();vPend();vOcs();vEnt();vAle();
   ['pend','ocs','ent','ale'].forEach(v=>document.getElementById('v-'+v).classList.toggle('hidden',v!==view));
