@@ -628,6 +628,8 @@ html.celu .dd-head .dd-seg{width:100%}html.celu .dd-head .dd-seg button{flex:1;p
         <label><span class="lbl">Formato</span><input id="o-fmt" placeholder="bobinas 30 kg"></label>
         <label><span class="lbl">Kg pedidos</span><input class="num" id="o-kg" type="number" step="0.1" placeholder="4000"></label>
         <label><span class="lbl">Entrega comprometida</span><input type="date" id="o-fe"></label>
+        <label><span class="lbl">Precio por kg (+ IVA)</span><input class="num" id="o-pre" type="number" step="0.001" placeholder="3,88 — opcional"></label>
+        <label><span class="lbl">Moneda</span><select id="o-mon"><option>USD</option><option>ARS</option></select></label>
         <label style="grid-column:span 2"><span class="lbl">Referencia del pedido</span><input id="o-ref" placeholder="quién lo pidió y por qué medio — opcional"></label>
       </div>
       <p class="mini" style="margin-top:10px">Si el cliente no manda orden de compra, dejá el número vacío: se carga como <b>pedido sin OC</b> y funciona igual. Usá la referencia para dejar asentado quién lo pidió.</p>
@@ -893,6 +895,7 @@ let cli=cliDeLinea()[0], view='pend', open={};
 /* ---------- utilidades ---------- */
 const uid=()=>Math.random().toString(36).slice(2,9);
 const kg=n=>(n||0).toLocaleString('es-AR',{minimumFractionDigits:1,maximumFractionDigits:1});
+const precioTxt=o=>(o&&o.precio>0)?`${o.mon||'USD'} ${o.precio.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:3})}/kg + IVA`:'';
 const fd=s=>s?s.split('-').reverse().join('/'):'—';
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const hoy=()=>new Date().toISOString().slice(0,10);
@@ -977,7 +980,7 @@ function card({o,c}){
   const dup=dupn>1?dupn:0;
   return `<article class="oc ${est}"><div class="oc-top" data-tog="${o.id}" role="button" tabindex="0" aria-expanded="${!!open[o.id]}">
       <div class="oc-num">${o.sinoc?'':'OC '}${esc(o.num)}${o.sinoc?' <span class="tag sinoc">Sin OC</span>':''}</div>${t}
-      <div class="oc-art">${esc(o.art)} · ${esc(o.fmt)}${o.fe?' · entrega '+fd(o.fe):''}${o.ref?' · '+esc(o.ref):''}</div>
+      <div class="oc-art">${esc(o.art)} · ${esc(o.fmt)}${o.fe?' · entrega '+fd(o.fe):''}${o.ref?' · '+esc(o.ref):''}</div>${precioTxt(o)?`<div class="oc-art" style="font-weight:700;color:var(--verde)">💲 ${esc(precioTxt(o))}</div>`:''}
       <div class="oc-saldo" style="color:${c.abierta?(c.atraso>0?'var(--rojo)':'var(--naranja)'):'var(--verde)'}">
         ${c.abierta?kg(c.saldo):'0,0'}<small>${c.abierta?'Kg pendientes':'Sin saldo'}</small></div>
       <div class="oc-acc solo-admin">
@@ -993,7 +996,7 @@ function vOcs(){
    `<table><thead><tr><th>OC</th><th>Fecha</th><th>Artículo</th><th>Formato</th><th class="n">Pedido</th>
     <th class="n">Entregado</th><th class="n">Saldo</th><th>Entrega</th><th></th></tr></thead><tbody>`+
     os.map(o=>{const c=calc(o);return `<tr><td class="num" style="font-weight:700">${esc(o.num)}${o.ref?`<div class="mini" style="font-family:var(--sans);font-weight:400">${esc(o.ref)}</div>`:''}</td><td class="num">${fd(o.fec)}</td>
-      <td>${esc(o.art)}</td><td class="mini">${esc(o.fmt)}</td><td class="n">${kg(o.kg)}</td><td class="n">${kg(c.ent)}</td>
+      <td>${esc(o.art)}${precioTxt(o)?`<div class="mini" style="font-weight:700;color:var(--verde)">${esc(precioTxt(o))}</div>`:''}</td><td class="mini">${esc(o.fmt)}</td><td class="n">${kg(o.kg)}</td><td class="n">${kg(c.ent)}</td>
       <td class="n" style="font-weight:700;color:${c.exceso?'var(--naranja)':(c.abierta?'var(--naranja)':'var(--verde)')}">
       ${c.exceso?'+'+kg(c.exceso):kg(c.saldo)}</td><td class="num">${fd(o.fe)}</td>
       <td style="white-space:nowrap"><button class="btn solo-admin" data-edito="${o.id}">Editar</button> <button class="btn danger" data-delo="${o.id}">Borrar</button></td></tr>`;}).join('')+
@@ -1360,8 +1363,9 @@ document.getElementById('o-add').onclick=()=>{
   if(sinoc){const n=D.ocs.filter(o=>o.cli===cli&&o.sinoc).length+1; num='Pedido s/OC #'+n;}
   else if(D.ocs.some(o=>o.cli===cli&&o.num===num)&&
      !confirm(`Ya existe la OC ${num} para ${cli}. ¿Cargarla igual?`)) return;
-  D.ocs.push({id:uid(),ts:AHORA(),cli,num,sinoc,ref:g('o-ref'),fec:g('o-fec'),art:g('o-art')||'—',fmt:g('o-fmt')||'—',kg:k,fe:g('o-fe')});
-  ['o-num','o-kg','o-art','o-fmt','o-fec','o-fe','o-ref'].forEach(i=>document.getElementById(i).value='');
+  D.ocs.push({id:uid(),ts:AHORA(),cli,num,sinoc,ref:g('o-ref'),fec:g('o-fec'),art:g('o-art')||'—',fmt:g('o-fmt')||'—',kg:k,fe:g('o-fe'),
+    precio:parseFloat(g('o-pre'))>0?parseFloat(g('o-pre')):null,mon:document.getElementById('o-mon').value||'USD'});
+  ['o-num','o-kg','o-art','o-fmt','o-fec','o-fe','o-ref','o-pre'].forEach(i=>document.getElementById(i).value='');
   save();toast(sinoc?num+' agregado':'OC '+num+' agregada');
 };
 document.getElementById('e-add').onclick=()=>{
@@ -1967,6 +1971,10 @@ function editar(id){
       ${f('Artículo','ed-art','text',o.art)}
       ${f('Formato','ed-fmt','text',o.fmt)}
     </div>
+    <div class="grid" style="margin-top:11px">
+      ${f('Precio por kg (+ IVA)','ed-pre','number',o.precio,'step="0.001" class="num"')}
+      <label><span class="lbl">Moneda</span><select id="ed-mon"><option${(o.mon||'USD')==='USD'?' selected':''}>USD</option><option${o.mon==='ARS'?' selected':''}>ARS</option></select></label>
+    </div>
     <div style="margin-top:11px">${f('Referencia','ed-ref','text',o.ref)}</div>
     <div class="row-actions">
       <button class="btn" id="ed-go">Guardar cambios</button>
@@ -1981,7 +1989,8 @@ function editar(id){
     if(!v('ed-num')&&o.sinoc) document.getElementById('ed-num').value=o.num;
     const antes=o.kg;
     Object.assign(o,{num:v('ed-num'),fec:v('ed-fec'),kg:k,fe:v('ed-fe'),
-                     art:v('ed-art')||'—',fmt:v('ed-fmt')||'—',ref:v('ed-ref'),ts:AHORA()});
+                     art:v('ed-art')||'—',fmt:v('ed-fmt')||'—',ref:v('ed-ref'),ts:AHORA(),
+                     precio:parseFloat(v('ed-pre'))>0?parseFloat(v('ed-pre')):null,mon:document.getElementById('ed-mon').value||'USD'});
     let msg='Pedido actualizado';
     if(k>antes&&o.cerradaManual&&calc(o).saldo>0.05){ delete o.cerradaManual; msg='Pedido actualizado y reabierto (subieron los kg)'; }
     if(k!==antes) msg+=` · ${kg(antes)} → ${kg(k)} kg`;
