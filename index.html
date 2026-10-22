@@ -143,6 +143,13 @@ main{padding:18px 20px;max-width:1240px;margin:0 auto;width:100%}
 .tag.abierta{background:var(--naranja-cl);color:var(--naranja)}
 .tag.cerrada{background:var(--verde-cl);color:var(--verde-osc)}
 .tag.venc{background:var(--rojo-cl);color:var(--rojo)}
+.tag.listo{background:#e3f4ea;color:#0e6b3f;border-color:#bfe3cd;text-transform:none;letter-spacing:.01em;font-size:11px}
+.tag.enproc{background:#eef2fb;color:#3256a8;border-color:#d3ddf3;text-transform:none;letter-spacing:.01em;font-size:11px}
+.ln-b{flex-basis:100%;display:flex;gap:6px;flex-wrap:wrap;margin-top:-4px}
+html.celu .ln-b{grid-column:1/-1;margin-top:0}
+.ln-det{background:#f3faf6;border:1px solid #d6eedf;border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:12.5px;color:#2d4a3a;line-height:1.6}.ln-det b{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#0e6b3f}
+.ln-res span{color:#0e6b3f}.ln-res b{color:#0e6b3f}
+.ln-meta b{color:#0e6b3f}
 .tag.sinoc{background:var(--line2);color:var(--gris);font-weight:600}
 .oc-saldo{font-family:var(--mono);font-size:19px;font-weight:500;text-align:right;letter-spacing:-.03em}
 .oc-saldo small{display:block;font-size:9.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--gris);font-family:var(--sans)}
@@ -934,6 +941,151 @@ function barra(c){
     </div></div>`;
 }
 
+// ── Envíos de Chivilcoy: lector común (mismo código en Termoformado, Laminado y Refilado y Estado de pedidos) ──
+// La app de PET Chivilcoy publica envios-lanus.json en un Gist. Se lee por la URL "raw" (sin límite de
+// consultas); la primera vez se averigua el dueño del Gist por la API de GitHub y se recuerda en el equipo.
+const CHIV_FILE='envios-lanus.json';
+function chivGid(s){const m=String(s||'').match(/[0-9a-f]{20,40}/i);return m?m[0]:'';}
+async function chivFeedLeer(gidIn){
+  const gid=chivGid(gidIn);if(!gid)throw new Error('falta el código de Chivilcoy');
+  const okFeed=j=>j&&j.v&&Array.isArray(j.bobinas)&&j.pedidos;
+  let owner='';try{owner=localStorage.getItem('chiv_owner_'+gid)||'';}catch(_){}
+  if(owner){
+    try{const r=await fetch(`https://gist.githubusercontent.com/${owner}/${gid}/raw/${CHIV_FILE}?t=${Date.now()}`,{cache:'no-store'});
+      if(r.ok){const j=await r.json();if(okFeed(j))return j;}}catch(_){}
+  }
+  const r=await fetch('https://api.github.com/gists/'+gid,{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
+  if(!r.ok)throw new Error('no se pudo leer Chivilcoy (HTTP '+r.status+')');
+  const g=await r.json();const f=g.files&&g.files[CHIV_FILE];if(!f)throw new Error('el código no corresponde a los envíos de Chivilcoy');
+  try{if(g.owner&&g.owner.login)localStorage.setItem('chiv_owner_'+gid,g.owner.login);}catch(_){}
+  let txt=f.content;if(f.truncated||!txt){const rr=await fetch(f.raw_url,{cache:'no-store'});txt=await rr.text();}
+  const j=JSON.parse(txt);if(!okFeed(j))throw new Error('archivo de envíos con formato desconocido');
+  return j;
+}
+
+/* ==================================================================
+   LISTO PARA ENTREGAR EN LANÚS (v2026-10 · integración Chivilcoy → Lanús)
+   Lee, sin escribir nada:
+     · la app Laminado y Refilado (pallets terminados y lo que está en proceso, por OC)
+     · los envíos de Chivilcoy a Lanús (envios-lanus.json, el código lo toma de Laminado y Refilado)
+   y arma por cada OC de esta app: kg listos para entregar y kg en proceso.
+     · Listo = pallets cerrados en stock de Refilado (bobinas finales sin remitir)
+             + bobinas de clientes directos que llegaron de Chivilcoy, menos lo entregado desde que llegaron.
+     · En proceso = bobinas para refilar/laminar en Lanús y pallets que se están armando.
+   El vínculo OC ↔ pedido sale de Chivilcoy (que ya cruza sus pedidos con estas OC) y, si no, por
+   número de OC + cliente + medida. Si una OC tiene varias líneas, se reparte por fecha de entrega.
+   ================================================================== */
+const REF_BIN='6aa94df9ffd5d160530a1a0b';           // bin de Laminado y Refilado (misma cuenta)
+const LAN={feed:null,ref:null,ts:0,err:'',map:new Map(),tot:{listo:0,proc:0,nOc:0}};
+const lnNorm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+  .replace(/\b(s\.?\s?a\.?|s\.?\s?r\.?\s?l\.?|s\.?\s?a\.?\s?s\.?|sociedad anonima)\b/g,' ').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+const lnN=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+function lnCli(a,b){const na=lnNorm(a),nb=lnNorm(b);if(!na||!nb)return false;if(na===nb||na.includes(nb)||nb.includes(na))return true;const wa=na.split(' ')[0],wb=nb.split(' ')[0];return wa.length>=4&&wa===wb;}
+function lnBase(s){s=String(s||'');const m=s.match(/(\d{3,})\s*-\s*(\d{3,})/);const x=m?m[2]:(s.match(/\d{3,}/)||[''])[0];return x.replace(/^0+/,'');}
+function lnMed(art,an,es){const a=String(art||'').toLowerCase().replace(/×/g,'x').replace(/\s+/g,'').replace(/mm|mic|µ|um/g,'');return !!(an&&es)&&a.includes(`${an}x${es}`);}
+// OCs de esta app que corresponden a un pedido/OC de Lanús
+function lnOcsPara({epIds,nro,cli,an,es}){
+  if(epIds&&epIds.length){const r=D.ocs.filter(o=>epIds.includes(o.id));if(r.length)return r;}
+  const b=lnBase(nro);if(!b)return [];
+  let c=D.ocs.filter(o=>lnBase(o.num)===b);if(!c.length)return [];
+  const pc=c.filter(o=>lnCli(o.cli,cli));if(pc.length)c=pc;else if(new Set(c.map(o=>o.cli)).size>1)return [];
+  if(c.length>1){const pm=c.filter(o=>lnMed(o.art,an,es));if(pm.length)c=pm;}
+  return c;
+}
+function lnVivo(arr,tomb,k){return (arr||[]).filter(x=>{const t=tomb[k+':'+x.id];return !t||(x.updatedAt||'')>t;});}
+async function lnBajarRef(){
+  const r=await fetch(`https://api.jsonbin.io/v3/b/${REF_BIN}/latest`,{headers:{'X-Master-Key':BIN_KEY,'X-Bin-Meta':'false'},cache:'no-store'});
+  if(!r.ok)throw new Error('Refilado HTTP '+r.status);
+  const S=await r.json();const t=S.tomb||{};
+  ['ocs','laminadas','ops','finales'].forEach(k=>S[k]=lnVivo(S[k],t,k));
+  return S;
+}
+async function cargarLanus(forzar){
+  if(!HAY_NUBE)return;
+  if(!forzar&&Date.now()-LAN.ts<4*60000)return;
+  LAN.ts=Date.now();
+  try{
+    const ref=await lnBajarRef();LAN.ref=ref;
+    const cod=ref.params&&ref.params.chivGist;
+    if(cod){try{LAN.feed=await chivFeedLeer(cod);}catch(e){console.warn('[lanus] envíos Chivilcoy:',e.message);}}
+    LAN.err='';
+  }catch(e){LAN.err=e.message||String(e);console.warn('[lanus]',e);}
+  lnCalcular();
+  try{render();}catch(e){}
+}
+function lnCalcular(){
+  const S=LAN.ref,F=LAN.feed;const map=new Map();
+  const add=(ocs,listo,proc,det)=>{if(!ocs.length||(!listo&&!proc))return;
+    // repartir por fecha de entrega entre las líneas abiertas de la OC
+    const ls=ocs.map(o=>({o,c:calc(o)})).sort((a,b)=>((a.o.fe||'9')<(b.o.fe||'9')?-1:1));
+    const dst=ls.filter(x=>x.c.abierta);if(!dst.length)return;
+    let L=listo,P=proc;
+    dst.forEach((x,i)=>{const m=map.get(x.o.id)||{listo:0,proc:0,det:[]};const ult=i===dst.length-1;
+      const cap=Math.max(0,x.c.saldo-m.listo-m.proc);
+      const l=ult?L:Math.min(L,cap);L-=l;const p=ult?P:Math.min(P,Math.max(0,cap-l));P-=p;
+      m.listo+=l;m.proc+=p;if(l||p)m.det.push(...det);map.set(x.o.id,m);});
+  };
+  const peds=(F&&F.pedidos)||{};
+  const pedPorSol={};Object.values(peds).forEach(p=>{if(p.solicitud)pedPorSol[lnN(p.solicitud)]=p;});
+  if(S){
+    const lst=(S.params&&Array.isArray(S.params.directos))?S.params.directos:['Blibox','Laboreau'];
+    const esDir=c=>lst.some(x=>lnN(c).includes(lnN(x).slice(0,6)));
+    const pk=f=>String(f.pallet||'sin pallet');
+    const opAb=id=>(S.ops||[]).find(o=>o.ocId===id&&o.estado==='abierta');
+    const armando=o=>{const op=opAb(o.id);if(!op||!op.palletActual)return null;const p=String(op.palletActual),cap=op.palletCap||o.bxp||0,n=S.finales.filter(f=>f.ocId===o.id&&pk(f)===p).length;return cap&&n>=cap?null:p;};
+    (S.ocs||[]).forEach(o=>{
+      if(o.estado!=='abierta'&&!S.finales.some(f=>f.ocId===o.id&&f.estado==='en stock'))return;
+      if(esDir(o.cliente))return;
+      const arm=armando(o);
+      const fs=S.finales.filter(f=>f.ocId===o.id&&f.estado==='en stock');
+      const fin=fs.filter(f=>pk(f)!==arm),proc=fs.filter(f=>pk(f)===arm);
+      const kgFin=fin.reduce((s,f)=>s+(+f.kg||0),0);
+      const kgLam=(S.laminadas||[]).filter(l=>l.ocId===o.id&&l.estado!=='cerrada'&&!l.resto).reduce((s,l)=>s+Math.max(0,(+l.kg||0)-S.finales.filter(f=>f.lamId===l.id).reduce((a,f)=>a+(+f.kg||0),0)),0);
+      const kgProc=proc.reduce((s,f)=>s+(+f.kg||0),0)+kgLam;
+      if(!kgFin&&!kgProc)return;
+      const ped=(o.chivPed&&peds[o.chivPed])||(o.solicitudChiv&&pedPorSol[lnN(o.solicitudChiv)])||null;
+      const ocs=lnOcsPara({epIds:ped&&ped.epOcIds,nro:o.nro,cli:o.cliente,an:o.ancho,es:o.espPet||o.esp});
+      const pals=[...new Set(fin.map(pk))];
+      add(ocs,kgFin,kgProc,[{tipo:'ref',txt:`Refilado Lanús · OC ${o.nro||'—'}`+(pals.length?` · ${pals.length} pallet${pals.length>1?'s':''} listo${pals.length>1?'s':''} (${pals.join(', ')})`:'')+(kgProc?` · ${kg(kgProc)} kg en proceso`:'')}]);
+    });
+    // directos al cliente y PET para laminar, desde los envíos de Chivilcoy
+    if(F){
+      const lamUsadas=new Set((S.laminadas||[]).filter(l=>l.tipo!=='PET').map(l=>(String(l.partida||'')+'|'+String(l.nroOrigen||'')).toUpperCase()));
+      const petpe=(S.params&&Array.isArray(S.params.petpe))?S.params.petpe:['Don Yeyo','Molinos','MFA','Dantelli','Cadrinorte','La Italiana','El Artesano','Mendia','Smams','Villa D Agri','BarielPack'];
+      const esPP=c=>petpe.some(x=>lnN(c).includes(lnN(x).slice(0,6)));
+      const g={};
+      F.bobinas.forEach(b=>{const p=peds[b.ped];if(!p||p.clase==='termo')return;
+        const cl=(p.clase==='laminado'||esPP(p.cliente))?'lam':esDir(p.cliente)?'dir':'';if(!cl)return;
+        if(cl==='lam'&&lamUsadas.has((String(b.partida||'').toUpperCase().trim()+'|'+String(b.nro||'').trim())))return;
+        const k=cl+'|'+p.id;const x=g[k]||(g[k]={cl,p,kg:0,desde:'',n:0});x.kg+=+b.kg||0;x.n++;if(!x.desde||b.fEnvio<x.desde)x.desde=b.fEnvio;});
+      Object.values(g).forEach(x=>{
+        const ocs=lnOcsPara({epIds:x.p.epOcIds,nro:x.p.oc,cli:x.p.cliente,an:x.p.ancho,es:x.p.espesor});if(!ocs.length)return;
+        if(x.cl==='dir'){
+          const ids=new Set(ocs.map(o=>o.id));
+          const ent=D.entregas.filter(e=>ids.has(e.oc)&&e.fec>=x.desde).reduce((s,e)=>s+(+e.kg||0),0);
+          const l=Math.max(0,x.kg-ent);
+          add(ocs,l,0,[{tipo:'dir',txt:`Directo de Chivilcoy · ${x.n} bobinas llegadas desde el ${fd(x.desde)} (${kg(x.kg)} kg)`+(ent?` · ya entregados ${kg(ent)} kg`:'')}]);
+        }else add(ocs,0,x.kg,[{tipo:'lam',txt:`PET de Chivilcoy para laminar · ${x.n} bobinas (${kg(x.kg)} kg de PET)`}]);
+      });
+    }
+  }
+  map.forEach(m=>{m.listo=+m.listo.toFixed(1);m.proc=+m.proc.toFixed(1);});
+  LAN.map=map;
+  let L=0,P=0,n=0;map.forEach((m,id)=>{if(D.ocs.some(o=>o.id===id)){L+=m.listo;P+=m.proc;if(m.listo>0.05)n++;}});
+  LAN.tot={listo:L,proc:P,nOc:n};
+}
+function lnBadges(o){
+  const m=LAN.map.get(o.id);if(!m)return '';
+  return `${m.listo>0.05?`<span class="tag listo" title="${esc(m.det.map(d=>d.txt).join(' — '))}">✓ ${kg(m.listo)} kg listos en Lanús</span>`:''}${m.proc>0.05?`<span class="tag enproc" title="${esc(m.det.map(d=>d.txt).join(' — '))}">${kg(m.proc)} kg en proceso</span>`:''}`;
+}
+function lnDetalle(o){
+  const m=LAN.map.get(o.id);if(!m||!m.det.length)return '';
+  return `<div class="ln-det"><b>En Lanús</b>${m.det.map(d=>`<div>${d.tipo==='ref'?'✂️':d.tipo==='dir'?'📦':'🔗'} ${esc(d.txt)}</div>`).join('')}</div>`;
+}
+setInterval(()=>{if(!document.hidden)cargarLanus(false);},60000);
+
+setTimeout(()=>cargarLanus(true),2500);
+
 /* ---------- vistas ---------- */
 function vPend(){
   const os=ocsCli().map(o=>({o,c:calc(o)}));
@@ -943,8 +1095,10 @@ function vPend(){
   const ce=os.filter(x=>!x.c.abierta);
   const porArt={}; ab.forEach(x=>{porArt[x.o.art]=(porArt[x.o.art]||0)+x.c.saldo;});
   const tot=ab.reduce((s,x)=>s+x.c.saldo,0);
+  const lnL=ab.reduce((s,x)=>s+((LAN.map.get(x.o.id)||{}).listo||0),0),lnP=ab.reduce((s,x)=>s+((LAN.map.get(x.o.id)||{}).proc||0),0);
   const resumen=ab.length?`<div class="card resumen">
     <div class="res-top"><span class="lbl">Falta entregar</span><b>${kg(tot)} kg</b></div>
+    ${lnL>0.05||lnP>0.05?`<div class="res-row ln-res"><span>✓ Listo para entregar en Lanús${lnP>0.05?` · ${kg(lnP)} kg más en proceso`:''}</span><b>${kg(lnL)}</b></div>`:''}
     ${Object.entries(porArt).sort((a,b)=>b[1]-a[1]).map(([a,k])=>
       `<div class="res-row"><span>${esc(a)}</span><b>${kg(k)}</b></div>`).join('')}</div>`:'';
   const lim=new Date(Date.now()+15*864e5).toISOString().slice(0,10);
@@ -960,7 +1114,7 @@ function vPend(){
 function card({o,c}){
   const t=c.abierta?(c.atraso>0?`<span class="tag venc">Vencida hace ${c.atraso} d</span>`:`<span class="tag abierta">Abierta</span>`)
                    :`<span class="tag cerrada">Cerrada${c.exceso?' · con excedente':(c.falta?' · con faltante':'')}</span>`;
-  const det=open[o.id]?`<div class="oc-det">
+  const det=open[o.id]?`<div class="oc-det">${lnDetalle(o)}
       <table><thead><tr><th>Fecha</th><th>Remito</th><th class="n">Kg</th><th class="n">Bob.</th><th class="n">Pallets</th>
         <th class="n">Acumulado</th><th>Observación</th></tr></thead><tbody>
       ${c.es.length?c.es.map((e,i)=>{const ac=c.es.slice(0,i+1).reduce((s,x)=>s+x.kg,0);
@@ -987,6 +1141,7 @@ function card({o,c}){
         <button data-cierra="${o.id}">${o.cerradaManual?'Reabrir':'Cerrar'}</button>
         <button data-edito="${o.id}">Editar</button>
         <button class="del" data-delo="${o.id}">Borrar</button></div>
+      ${lnBadges(o)?`<div class="ln-b">${lnBadges(o)}</div>`:''}
     </div>${dup?`<div class="dup">Hay ${dup} pedidos cargados con este mismo número. Revisá si quedó duplicado.</div>`:''}${barra(c)}${det}</article>`;
 }
 
@@ -1082,11 +1237,11 @@ function vTot(){
    </tbody></table></div>
   <div class="card"><h2>OC abiertas de ${esc(nomLinea(linea))} · por fecha de entrega</h2>
    ${todas.length?`<table><thead><tr>${linea===TODAS?'<th>Línea</th>':''}<th>Cliente</th><th>OC</th><th>Artículo</th><th>Entrega</th>
-     <th class="n">Atraso</th><th class="n">Pendiente</th></tr></thead><tbody>
+     <th class="n">Atraso</th><th class="n">Pendiente</th><th class="n">Listo en Lanús</th></tr></thead><tbody>
     ${todas.map(({o,c})=>`<tr>${linea===TODAS?`<td class="mini">${esc(nomLinea(lineaDe(o.cli)))}</td>`:''}<td class="mini">${esc(o.cli)}</td><td class="num" style="font-weight:600">${esc(o.num)}</td>
       <td class="mini">${esc(o.art)}</td><td class="num">${fd(o.fe)}</td>
       <td class="n" style="${c.atraso>0?'color:var(--rojo);font-weight:600':'color:var(--gris)'}">${c.atraso>0?c.atraso+' d':'—'}</td>
-      <td class="n" style="font-weight:600">${kg(c.saldo)}</td></tr>`).join('')}
+      <td class="n" style="font-weight:600">${kg(c.saldo)}</td><td class="n" style="color:var(--verde-osc);font-weight:600">${(LAN.map.get(o.id)||{}).listo>0.05?kg(LAN.map.get(o.id).listo):'—'}</td></tr>`).join('')}
    </tbody></table>`:`<p class="mini">No hay OC abiertas.</p>`}</div>`;
 }
 
@@ -1111,7 +1266,7 @@ function pintarLineas(){
     })();
 }
 
-function render(){
+function render(){try{lnCalcular();}catch(e){console.warn('[lanus]',e);}
   asegurarLineas();
   const dela=cliDeLinea(), todas=linea===TODAS;
   if(todas) cli=TOT;
@@ -1261,6 +1416,7 @@ function vDash(){
         <div><span>Remitos este mes</span><b>${remitos(Em)}</b></div>
         <div><span>Entregado de más (total)</span><b>${kg0(S(exc,x=>x.c.exceso))} kg</b> <small>· ${exc.length} OC</small></div>
         <div><span>Última entrega</span><b>${ult?fd(ult.fec):'—'}</b> <small>${ult?'· '+esc(ult.cli):''}</small></div>
+        <div class="ln-meta"><span>Listo para entregar en Lanús</span><b>${kg0(ab.reduce((s,x)=>s+((LAN.map.get(x.o.id)||{}).listo||0),0))} kg</b> <small>· ${ab.filter(x=>((LAN.map.get(x.o.id)||{}).listo||0)>0.05).length} OC${LAN.err?' · ⚠ sin conexión con Lanús':''}</small></div>
       </div>
     </div>
     <div class="dd-box">
