@@ -150,6 +150,7 @@ html.celu .ln-b{grid-column:1/-1;margin-top:0}
 .ln-det{background:#f3faf6;border:1px solid #d6eedf;border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:12.5px;color:#2d4a3a;line-height:1.6}.ln-det b{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#0e6b3f}
 .ln-res span{color:#0e6b3f}.ln-res b{color:#0e6b3f}
 .ln-meta b{color:#0e6b3f}
+.dsk-ln{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11.5px;color:#3256a8;margin:2px 0 6px}.dsk-ln .ok{color:#0e6b3f;font-weight:700}
 .tag.sinoc{background:var(--line2);color:var(--gris);font-weight:600}
 .oc-saldo{font-family:var(--mono);font-size:19px;font-weight:500;text-align:right;letter-spacing:-.03em}
 .oc-saldo small{display:block;font-size:9.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--gris);font-family:var(--sans)}
@@ -1346,11 +1347,12 @@ function vDash(){
 
   /* --- tarjetas por cliente --- */
   const porCli={}; ab.forEach(x=>{const p=porCli[x.o.cli]||(porCli[x.o.cli]={n:x.o.cli,pen:0,ped:0,ent:0,ab:0,ve:0,kv:0,fe:''});
-    p.pen+=x.c.saldo;p.ped+=x.o.kg;p.ent+=x.c.ent;p.ab++; if(x.c.atraso>0){p.ve++;p.kv+=x.c.saldo;}
+    p.pen+=x.c.saldo;p.ped+=x.o.kg;p.ent+=x.c.ent;p.ab++;{const m=LAN.map.get(x.o.id);if(m){p.lis=(p.lis||0)+m.listo;p.pro=(p.pro||0)+m.proc;}} if(x.c.atraso>0){p.ve++;p.kv+=x.c.saldo;}
     if(x.o.fe&&x.c.atraso<=0&&(!p.fe||x.o.fe<p.fe))p.fe=x.o.fe;});
   const cards=Object.values(porCli).sort((a,b)=>b.pen-a.pen).map(p=>`<div class="dsk ${p.ve?'neg':''}" data-gc="${esc(p.n)}">
     <div class="dsk-h"><span>${esc(p.n)}</span>${tagLin(p.n)}</div>
     <div class="dsk-n"><b>${kg0(p.pen)}</b><small>kg pendientes</small></div>
+    ${(p.lis||0)>0.05||(p.pro||0)>0.05?`<div class="dsk-ln">${(p.lis||0)>0.05?`<span class="ok">✓ ${kg0(p.lis)} kg listos en Lanús</span>`:''}${(p.pro||0)>0.05?`<span>${kg0(p.pro)} kg en proceso</span>`:''}</div>`:''}
     <div class="dsk-b"><i style="width:${p.ped?Math.min(100,p.ent/p.ped*100):0}%"></i></div>
     <div class="dsk-f"><span>${p.ab} OC abierta${p.ab>1?'s':''}</span>${p.ve?`<span class="bad">${p.ve} vencida${p.ve>1?'s':''} · ${kg0(p.kv)} kg</span>`
       :(p.fe?`<span>próx. ${ddmm(p.fe)}</span>`:`<span>sin fecha</span>`)}</div></div>`).join('');
