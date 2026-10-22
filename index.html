@@ -148,6 +148,9 @@ main{padding:18px 20px;max-width:1240px;margin:0 auto;width:100%}
 .ln-b{flex-basis:100%;display:flex;gap:6px;flex-wrap:wrap;margin-top:-4px}
 html.celu .ln-b{grid-column:1/-1;margin-top:0}
 .ln-det{background:#f3faf6;border:1px solid #d6eedf;border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:12.5px;color:#2d4a3a;line-height:1.6}.ln-det b{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#0e6b3f}
+.ln-cli{padding:14px 18px}.ln-cli-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}.ln-cli-h .lbl{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#0e6b3f}.ln-cli-h b{font-family:var(--mono);font-size:19px;color:#0e6b3f}
+.ln-oc{border-top:1px solid var(--line2);padding:2px 0}.ln-oc>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;gap:10px;align-items:baseline;padding:9px 0;flex-wrap:wrap}.ln-oc>summary::-webkit-details-marker{display:none}.ln-oc-k{font-family:var(--mono);font-weight:600;color:#0e6b3f}.ln-oc-k small{font-family:var(--sans);font-weight:400;color:var(--gris);font-size:11px}
+.ln-src{font-size:12.5px;margin:4px 0 6px;color:#2d4a3a}.ln-pals{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.ln-pal{background:#f3faf6;border:1px solid #d6eedf;border-radius:8px;padding:5px 9px;font-size:12px;color:#2d4a3a}.ln-pal b{margin-right:6px}
 .ln-sobra{margin-top:6px;color:#9a5b12}
 .ln-res span{color:#0e6b3f}.ln-res b{color:#0e6b3f}
 .ln-meta b{color:#0e6b3f}
@@ -1061,7 +1064,9 @@ function lnCalcular(){
       const entE=D.entregas.filter(e=>idsE.has(e.oc)&&(!desdeF||e.fec>=desdeF)).reduce((s,e)=>s+(+e.kg||0),0);
       const kgFin=Math.max(0,kgHecho-entE);
       const pals=[...new Set(fin.map(pk))];
-      add(ocs,kgFin,kgProc,[{tipo:'ref',txt:`Refilado Lanús · OC ${o.nro||'—'} · ${kg(kgHecho)} kg refilados en ${pals.length} pallet${pals.length===1?'':'s'}`+(entE?` − ${kg(entE)} kg ya entregados`:'')+(kgProc?` · ${kg(kgProc)} kg en proceso`:'')}]);
+      const palsDet=pals.map(pl=>{const xs=fin.filter(f=>pk(f)===pl);return {pal:pl,n:xs.length,kg:xs.reduce((s,f)=>s+(+f.kg||0),0),desp:xs.every(f=>f.estado!=='en stock')};}).sort((a,b)=>String(a.pal).localeCompare(String(b.pal),undefined,{numeric:true}));
+      // v-oct: solo lo listo para entregar (lo que está en proceso no se muestra)
+      if(kgFin>0.05)add(ocs,kgFin,0,[{tipo:'ref',txt:`Refilado en Lanús · OC ${o.nro||'—'} · ${kg(kgHecho)} kg en ${pals.length} pallet${pals.length===1?'':'s'}`+(entE?` − ${kg(entE)} kg ya entregados`:''),pals:palsDet,ent:entE}]);
     });
     // directos al cliente y PET para laminar, desde los envíos de Chivilcoy
     if(F){
@@ -1074,15 +1079,15 @@ function lnCalcular(){
       F.bobinas.forEach(b=>{const p=peds[b.ped];if(!p||p.clase==='termo')return;const fz=forz(p.id)||(total(p.id)?'dir':'');if(!fz&&desde&&(b.fEnvio||'')<desde)return;
         const cl=fz?(fz==='ref'?'':fz):(p.clase==='laminado'||esPP(p.cliente))?'lam':(esDir(p.cliente)||(String(p.cono)==='6'&&esDir6(p.cliente)))?'dir':'';if(!cl)return;
         if(cl==='lam'&&lamUsadas.has(ck(b.partida,b.nro)))return;
-        const k=cl+'|'+p.id;const x=g[k]||(g[k]={cl,p,kg:0,desde:'',n:0,tot:total(p.id)});x.kg+=+b.kg||0;x.n++;if(!x.desde||b.fEnvio<x.desde)x.desde=b.fEnvio;});
+        const k=cl+'|'+p.id;const x=g[k]||(g[k]={cl,p,kg:0,desde:'',n:0,tot:total(p.id),pals:{}});x.kg+=+b.kg||0;x.n++;const pl=String(b.pallet||'s/p');const pp=x.pals[pl]||(x.pals[pl]={pal:pl,n:0,kg:0,f:b.fEnvio});pp.n++;pp.kg+=+b.kg||0;if(!x.desde||b.fEnvio<x.desde)x.desde=b.fEnvio;});
       Object.values(g).forEach(x=>{
         const ocs=lnOcsPara({epIds:x.p.epOcIds,nro:x.p.oc,cli:x.p.cliente,an:x.p.ancho,es:x.p.espesor});if(!ocs.length)return;
         if(x.cl==='dir'){
           const ids=new Set(ocs.map(o=>o.id));
           const ent=D.entregas.filter(e=>ids.has(e.oc)&&(x.tot||e.fec>=x.desde)).reduce((s,e)=>s+(+e.kg||0),0);
           const l=Math.max(0,x.kg-ent);
-          add(ocs,l,0,[{tipo:'dir',txt:`Directo de Chivilcoy · ${x.n} bobinas ${x.tot?'enviadas en total':'llegadas desde el '+fd(x.desde)} (${kg(x.kg)} kg)`+(ent?` · ya entregados ${kg(ent)} kg`:'')}]);
-        }else add(ocs,0,x.kg,[{tipo:'lam',txt:`PET de Chivilcoy para laminar · ${x.n} bobinas (${kg(x.kg)} kg de PET)`}]);
+          if(l>0.05)add(ocs,l,0,[{tipo:'dir',pals:Object.values(x.pals).sort((a,b)=>String(a.pal).localeCompare(String(b.pal),undefined,{numeric:true})),ent,txt:`Directo de Chivilcoy · ${x.n} bobinas ${x.tot?'enviadas en total':'llegadas desde el '+fd(x.desde)} (${kg(x.kg)} kg)`+(ent?` · ya entregados ${kg(ent)} kg`:'')}]);
+        }
       });
     }
   }
@@ -1094,6 +1099,18 @@ function lnCalcular(){
 function lnBadges(o){
   const m=LAN.map.get(o.id);if(!m)return '';
   return `${m.listo>0.05?`<span class="tag listo" title="${esc(m.det.map(d=>d.txt).join(' — '))}">✓ ${kg(m.listo)} kg listos en Lanús</span>`:''}${m.proc>0.05?`<span class="tag enproc" title="${esc(m.det.map(d=>d.txt).join(' — '))}">${kg(m.proc)} kg en proceso</span>`:''}`;
+}
+// Detalle de lo listo para entregar de un cliente: por OC, de dónde sale y qué pallets hay
+function lnBloqueCliente(ab){
+  const xs=ab.map(x=>({o:x.o,c:x.c,m:LAN.map.get(x.o.id)})).filter(x=>x.m&&x.m.listo>0.05);
+  if(!xs.length)return '';
+  const tot=xs.reduce((s,x)=>s+x.m.listo,0);
+  return `<div class="card ln-cli"><div class="ln-cli-h"><span class="lbl">✓ Listo para entregar en Lanús</span><b>${kg(tot)} kg</b></div>
+    ${xs.map(({o,c,m})=>`<details class="ln-oc"><summary><span><b>${o.sinoc?'':'OC '}${esc(o.num)}</b> <span class="mini">${esc(o.art)}${o.fe?' · entrega '+fd(o.fe):''}</span></span><span class="ln-oc-k">${kg(m.listo)} kg <small>de ${kg(c.saldo)} pendientes</small></span></summary>
+      ${m.det.map(d=>`<div class="ln-src">${d.tipo==='ref'?'✂️ Refilado en Lanús':'📦 Directo de Chivilcoy'}${d.ent?` <span class="mini">· ya entregados ${kg(d.ent)} kg</span>`:''}</div>
+        ${(d.pals||[]).length?`<div class="ln-pals">${d.pals.map(p=>`<span class="ln-pal"><b>Pallet ${esc(p.pal)}</b>${p.n} bob. · ${kg(p.kg)} kg${p.f?' · llegó '+fd(p.f):''}${p.desp?' · <i>despachado en Refilado</i>':''}</span>`).join('')}</div>`:''}`).join('')}
+      ${m.sobra>0.05?`<div class="ln-sobra">⚠ Hay ${kg(m.sobra)} kg más en Lanús que lo que falta entregar de esta OC.</div>`:''}
+    </details>`).join('')}</div>`;
 }
 function lnDetalle(o){
   const m=LAN.map.get(o.id);if(!m||!m.det.length)return '';
@@ -1115,7 +1132,7 @@ function vPend(){
   const lnL=ab.reduce((s,x)=>s+((LAN.map.get(x.o.id)||{}).listo||0),0),lnP=ab.reduce((s,x)=>s+((LAN.map.get(x.o.id)||{}).proc||0),0);
   const resumen=ab.length?`<div class="card resumen">
     <div class="res-top"><span class="lbl">Falta entregar</span><b>${kg(tot)} kg</b></div>
-    ${lnL>0.05||lnP>0.05?`<div class="res-row ln-res"><span>✓ Listo para entregar en Lanús${lnP>0.05?` · ${kg(lnP)} kg más en proceso`:''}</span><b>${kg(lnL)}</b></div>`:''}
+    ${lnL>0.05?`<div class="res-row ln-res"><span>✓ Listo para entregar en Lanús</span><b>${kg(lnL)}</b></div>`:''}
     ${Object.entries(porArt).sort((a,b)=>b[1]-a[1]).map(([a,k])=>
       `<div class="res-row"><span>${esc(a)}</span><b>${kg(k)}</b></div>`).join('')}</div>`:'';
   const lim=new Date(Date.now()+15*864e5).toISOString().slice(0,10);
@@ -1123,7 +1140,7 @@ function vPend(){
   const g2=ab.filter(x=>x.c.atraso<=0&&x.o.fe&&x.o.fe<=lim);
   const g3=ab.filter(x=>!g1.includes(x)&&!g2.includes(x));
   const sec=(t,arr,cls)=>arr.length?`<h3 class="sec ${cls}">${t}<span>${arr.length}</span></h3>`+arr.map(card).join(''):'';
-  box.innerHTML=resumen
+  box.innerHTML=resumen+lnBloqueCliente(ab)
     +sec('Vencidas',g1,'r')+sec('Próximos 15 días',g2,'a')+sec('Más adelante',g3,'')
     +(ab.length?'':`<div class="empty"><b>No hay pedidos abiertos</b>Todo lo pedido está entregado.</div>`)
     +sec('Cerradas',ce,'v');
