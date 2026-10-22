@@ -1037,6 +1037,8 @@ function lnCalcular(){
     const lst6=(S.params&&Array.isArray(S.params.directos6))?S.params.directos6:['Bligraf'];
     const esDir6=c=>lst6.some(x=>lnN(c).includes(lnN(x).slice(0,6)));
     const forz=id=>(S.params&&S.params.chivPedidos&&S.params.chivPedidos[id])||'';
+    // pedidos con envíos registrados en Chivilcoy con fecha de regularización (ej. 15/10): se cuenta todo lo enviado menos todo lo entregado
+    const total=id=>!!(S.params&&Array.isArray(S.params.chivEPTotal)&&S.params.chivEPTotal.includes(id));
     const pk=f=>String(f.pallet||'sin pallet');
     const opAb=id=>(S.ops||[]).find(o=>o.ocId===id&&o.estado==='abierta');
     const armando=o=>{const op=opAb(o.id);if(!op||!op.palletActual)return null;const p=String(op.palletActual),cap=op.palletCap||o.bxp||0,n=S.finales.filter(f=>f.ocId===o.id&&pk(f)===p).length;return cap&&n>=cap?null:p;};
@@ -1063,17 +1065,17 @@ function lnCalcular(){
       const esPP=c=>petpe.some(x=>lnN(c).includes(lnN(x).slice(0,6)));
       const g={};
       const desde=(S.params&&S.params.chivDesde)||'';
-      F.bobinas.forEach(b=>{const p=peds[b.ped];if(!p||p.clase==='termo')return;const fz=forz(p.id);if(!fz&&desde&&(b.fEnvio||'')<desde)return;
+      F.bobinas.forEach(b=>{const p=peds[b.ped];if(!p||p.clase==='termo')return;const fz=forz(p.id)||(total(p.id)?'dir':'');if(!fz&&desde&&(b.fEnvio||'')<desde)return;
         const cl=fz?(fz==='ref'?'':fz):(p.clase==='laminado'||esPP(p.cliente))?'lam':(esDir(p.cliente)||(String(p.cono)==='6'&&esDir6(p.cliente)))?'dir':'';if(!cl)return;
         if(cl==='lam'&&lamUsadas.has(ck(b.partida,b.nro)))return;
-        const k=cl+'|'+p.id;const x=g[k]||(g[k]={cl,p,kg:0,desde:'',n:0});x.kg+=+b.kg||0;x.n++;if(!x.desde||b.fEnvio<x.desde)x.desde=b.fEnvio;});
+        const k=cl+'|'+p.id;const x=g[k]||(g[k]={cl,p,kg:0,desde:'',n:0,tot:total(p.id)});x.kg+=+b.kg||0;x.n++;if(!x.desde||b.fEnvio<x.desde)x.desde=b.fEnvio;});
       Object.values(g).forEach(x=>{
         const ocs=lnOcsPara({epIds:x.p.epOcIds,nro:x.p.oc,cli:x.p.cliente,an:x.p.ancho,es:x.p.espesor});if(!ocs.length)return;
         if(x.cl==='dir'){
           const ids=new Set(ocs.map(o=>o.id));
-          const ent=D.entregas.filter(e=>ids.has(e.oc)&&e.fec>=x.desde).reduce((s,e)=>s+(+e.kg||0),0);
+          const ent=D.entregas.filter(e=>ids.has(e.oc)&&(x.tot||e.fec>=x.desde)).reduce((s,e)=>s+(+e.kg||0),0);
           const l=Math.max(0,x.kg-ent);
-          add(ocs,l,0,[{tipo:'dir',txt:`Directo de Chivilcoy · ${x.n} bobinas llegadas desde el ${fd(x.desde)} (${kg(x.kg)} kg)`+(ent?` · ya entregados ${kg(ent)} kg`:'')}]);
+          add(ocs,l,0,[{tipo:'dir',txt:`Directo de Chivilcoy · ${x.n} bobinas ${x.tot?'enviadas en total':'llegadas desde el '+fd(x.desde)} (${kg(x.kg)} kg)`+(ent?` · ya entregados ${kg(ent)} kg`:'')}]);
         }else add(ocs,0,x.kg,[{tipo:'lam',txt:`PET de Chivilcoy para laminar · ${x.n} bobinas (${kg(x.kg)} kg de PET)`}]);
       });
     }
