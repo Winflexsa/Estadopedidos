@@ -148,6 +148,7 @@ main{padding:18px 20px;max-width:1240px;margin:0 auto;width:100%}
 .ln-b{flex-basis:100%;display:flex;gap:6px;flex-wrap:wrap;margin-top:-4px}
 html.celu .ln-b{grid-column:1/-1;margin-top:0}
 .ln-det{background:#f3faf6;border:1px solid #d6eedf;border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:12.5px;color:#2d4a3a;line-height:1.6}.ln-det b{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#0e6b3f}
+.ln-sobra{margin-top:6px;color:#9a5b12}
 .ln-res span{color:#0e6b3f}.ln-res b{color:#0e6b3f}
 .ln-meta b{color:#0e6b3f}
 .dsk-ln{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11.5px;color:#3256a8;margin:2px 0 6px}.dsk-ln .ok{color:#0e6b3f;font-weight:700}
@@ -1021,16 +1022,21 @@ function lnCalcular(){
     const ls=ocs.map(o=>({o,c:calc(o)})).sort((a,b)=>((a.o.fe||'9')<(b.o.fe||'9')?-1:1));
     const dst=ls.filter(x=>x.c.abierta);if(!dst.length)return;
     let L=listo,P=proc;
-    dst.forEach((x,i)=>{const m=map.get(x.o.id)||{listo:0,proc:0,det:[]};const ult=i===dst.length-1;
-      const cap=Math.max(0,x.c.saldo-m.listo-m.proc);
-      const l=ult?L:Math.min(L,cap);L-=l;const p=ult?P:Math.min(P,Math.max(0,cap-l));P-=p;
-      m.listo+=l;m.proc+=p;if(l||p)m.det.push(...det);map.set(x.o.id,m);});
+    // lo listo nunca supera lo que falta entregar; lo que sobra se avisa (suele ser una entrega no dada de baja en Refilado)
+    dst.forEach((x,i)=>{const m=map.get(x.o.id)||{listo:0,proc:0,sobra:0,det:[]};const ult=i===dst.length-1;
+      const cap=Math.max(0,x.c.saldo-m.listo);
+      const l=Math.min(L,cap);L-=l;const p=ult?P:Math.min(P,Math.max(0,x.c.saldo-m.listo-l-m.proc));P-=p;
+      if(ult&&L>0.05){m.sobra=(m.sobra||0)+L;L=0;}
+      m.listo+=l;m.proc+=p;if(l||p||m.sobra)m.det.push(...det);map.set(x.o.id,m);});
   };
   const peds=(F&&F.pedidos)||{};
   const pedPorSol={};Object.values(peds).forEach(p=>{if(p.solicitud)pedPorSol[lnN(p.solicitud)]=p;});
   if(S){
     const lst=(S.params&&Array.isArray(S.params.directos))?S.params.directos:['Blibox','Laboreau'];
     const esDir=c=>lst.some(x=>lnN(c).includes(lnN(x).slice(0,6)));
+    const lst6=(S.params&&Array.isArray(S.params.directos6))?S.params.directos6:['Bligraf'];
+    const esDir6=c=>lst6.some(x=>lnN(c).includes(lnN(x).slice(0,6)));
+    const forz=id=>(S.params&&S.params.chivPedidos&&S.params.chivPedidos[id])||'';
     const pk=f=>String(f.pallet||'sin pallet');
     const opAb=id=>(S.ops||[]).find(o=>o.ocId===id&&o.estado==='abierta');
     const armando=o=>{const op=opAb(o.id);if(!op||!op.palletActual)return null;const p=String(op.palletActual),cap=op.palletCap||o.bxp||0,n=S.finales.filter(f=>f.ocId===o.id&&pk(f)===p).length;return cap&&n>=cap?null:p;};
@@ -1057,8 +1063,8 @@ function lnCalcular(){
       const esPP=c=>petpe.some(x=>lnN(c).includes(lnN(x).slice(0,6)));
       const g={};
       const desde=(S.params&&S.params.chivDesde)||'';
-      F.bobinas.forEach(b=>{const p=peds[b.ped];if(!p||p.clase==='termo')return;if(desde&&(b.fEnvio||'')<desde)return;
-        const cl=(p.clase==='laminado'||esPP(p.cliente))?'lam':esDir(p.cliente)?'dir':'';if(!cl)return;
+      F.bobinas.forEach(b=>{const p=peds[b.ped];if(!p||p.clase==='termo')return;const fz=forz(p.id);if(!fz&&desde&&(b.fEnvio||'')<desde)return;
+        const cl=fz?(fz==='ref'?'':fz):(p.clase==='laminado'||esPP(p.cliente))?'lam':(esDir(p.cliente)||(String(p.cono)==='6'&&esDir6(p.cliente)))?'dir':'';if(!cl)return;
         if(cl==='lam'&&lamUsadas.has(ck(b.partida,b.nro)))return;
         const k=cl+'|'+p.id;const x=g[k]||(g[k]={cl,p,kg:0,desde:'',n:0});x.kg+=+b.kg||0;x.n++;if(!x.desde||b.fEnvio<x.desde)x.desde=b.fEnvio;});
       Object.values(g).forEach(x=>{
@@ -1083,7 +1089,7 @@ function lnBadges(o){
 }
 function lnDetalle(o){
   const m=LAN.map.get(o.id);if(!m||!m.det.length)return '';
-  return `<div class="ln-det"><b>En Lanús</b>${m.det.map(d=>`<div>${d.tipo==='ref'?'✂️':d.tipo==='dir'?'📦':'🔗'} ${esc(d.txt)}</div>`).join('')}</div>`;
+  return `<div class="ln-det"><b>En Lanús</b>${m.det.map(d=>`<div>${d.tipo==='ref'?'✂️':d.tipo==='dir'?'📦':'🔗'} ${esc(d.txt)}</div>`).join('')}${m.sobra>0.05?`<div class="ln-sobra">⚠ Hay ${kg(m.sobra)} kg más en Lanús que lo que falta entregar de esta OC. Puede ser una entrega que no se dio de baja en Laminado y Refilado (Despachos), o que la OC esté cargada por menos kilos.</div>`:''}</div>`;
 }
 setInterval(()=>{if(!document.hidden)cargarLanus(false);},60000);
 
