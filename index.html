@@ -1021,16 +1021,12 @@ async function cargarLanus(forzar){
 function lnCalcular(){
   const S=LAN.ref,F=LAN.feed;const map=new Map();
   const add=(ocs,listo,proc,det)=>{if(!ocs.length||(!listo&&!proc))return;
-    // repartir por fecha de entrega entre las líneas abiertas de la OC
-    const ls=ocs.map(o=>({o,c:calc(o)})).sort((a,b)=>((a.o.fe||'9')<(b.o.fe||'9')?-1:1));
-    const dst=ls.filter(x=>x.c.abierta);if(!dst.length)return;
-    let L=listo,P=proc;
-    // lo listo nunca supera lo que falta entregar; lo que sobra se avisa (suele ser una entrega no dada de baja en Refilado)
-    dst.forEach((x,i)=>{const m=map.get(x.o.id)||{listo:0,proc:0,sobra:0,det:[]};const ult=i===dst.length-1;
-      const cap=Math.max(0,x.c.saldo-m.listo);
-      const l=Math.min(L,cap);L-=l;const p=ult?P:Math.min(P,Math.max(0,x.c.saldo-m.listo-l-m.proc));P-=p;
-      if(ult&&L>0.05){m.sobra=(m.sobra||0)+L;L=0;}
-      m.listo+=l;m.proc+=p;if(l||p||m.sobra)m.det.push(...det);map.set(x.o.id,m);});
+    // v-oct: todo lo listo va a la línea abierta más vieja de la OC (por fecha de entrega y número),
+    // sin tope: muchas veces se entrega de más por OC y no corresponde pasar kilos a la línea siguiente.
+    const ls=ocs.map(o=>({o,c:calc(o)})).filter(x=>x.c.abierta).sort((a,b)=>((a.o.fe||'9')<(b.o.fe||'9')?-1:(a.o.fe||'9')>(b.o.fe||'9')?1:String(a.o.num).localeCompare(String(b.o.num),undefined,{numeric:true})));
+    if(!ls.length)return;
+    const x=ls[0];const m=map.get(x.o.id)||{listo:0,proc:0,sobra:0,det:[]};
+    m.listo+=listo;m.proc+=proc;if(listo||proc)m.det.push(...det);map.set(x.o.id,m);
   };
   const peds=(F&&F.pedidos)||{};
   const pedPorSol={};Object.values(peds).forEach(p=>{if(p.solicitud)pedPorSol[lnN(p.solicitud)]=p;});
