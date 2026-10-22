@@ -1051,14 +1051,15 @@ function lnCalcular(){
     });
     // directos al cliente y PET para laminar, desde los envíos de Chivilcoy
     if(F){
-      const lamUsadas=new Set((S.laminadas||[]).filter(l=>l.tipo!=='PET').map(l=>(String(l.partida||'')+'|'+String(l.nroOrigen||'')).toUpperCase()));
+      const ck=(p,n)=>{const x=String(p||'').toUpperCase().replace(/[^A-Z0-9]/g,'');return ((x.match(/^\d{4,6}[A-Z]?/)||[x])[0])+'|'+String(n||'').trim().replace(/^0+/,'');};
+      const lamUsadas=new Set((S.laminadas||[]).filter(l=>l.tipo!=='PET').map(l=>ck(l.partida,l.nroOrigen)));
       const petpe=(S.params&&Array.isArray(S.params.petpe))?S.params.petpe:['Don Yeyo','Molinos','MFA','Dantelli','Cadrinorte','La Italiana','El Artesano','Mendia','Smams','Villa D Agri','BarielPack'];
       const esPP=c=>petpe.some(x=>lnN(c).includes(lnN(x).slice(0,6)));
       const g={};
       const desde=(S.params&&S.params.chivDesde)||'';
       F.bobinas.forEach(b=>{const p=peds[b.ped];if(!p||p.clase==='termo')return;if(desde&&(b.fEnvio||'')<desde)return;
         const cl=(p.clase==='laminado'||esPP(p.cliente))?'lam':esDir(p.cliente)?'dir':'';if(!cl)return;
-        if(cl==='lam'&&lamUsadas.has((String(b.partida||'').toUpperCase().trim()+'|'+String(b.nro||'').trim())))return;
+        if(cl==='lam'&&lamUsadas.has(ck(b.partida,b.nro)))return;
         const k=cl+'|'+p.id;const x=g[k]||(g[k]={cl,p,kg:0,desde:'',n:0});x.kg+=+b.kg||0;x.n++;if(!x.desde||b.fEnvio<x.desde)x.desde=b.fEnvio;});
       Object.values(g).forEach(x=>{
         const ocs=lnOcsPara({epIds:x.p.epOcIds,nro:x.p.oc,cli:x.p.cliente,an:x.p.ancho,es:x.p.espesor});if(!ocs.length)return;
