@@ -1043,19 +1043,25 @@ function lnCalcular(){
     const opAb=id=>(S.ops||[]).find(o=>o.ocId===id&&o.estado==='abierta');
     const armando=o=>{const op=opAb(o.id);if(!op||!op.palletActual)return null;const p=String(op.palletActual),cap=op.palletCap||o.bxp||0,n=S.finales.filter(f=>f.ocId===o.id&&pk(f)===p).length;return cap&&n>=cap?null:p;};
     (S.ocs||[]).forEach(o=>{
-      if(o.estado!=='abierta'&&!S.finales.some(f=>f.ocId===o.id&&f.estado==='en stock'))return;
+      // Lo entregado sale SOLO de esta app (Estado de pedidos): un despacho cargado en Refilado no da de baja nada.
+      // Listo = todo lo refilado de la OC (pallets cerrados, estén o no despachados en Refilado) − lo entregado acá desde que se empezó a refilar.
       if(esDir(o.cliente))return;
       const arm=armando(o);
-      const fs=S.finales.filter(f=>f.ocId===o.id&&f.estado==='en stock');
-      const fin=fs.filter(f=>pk(f)!==arm),proc=fs.filter(f=>pk(f)===arm);
-      const kgFin=fin.reduce((s,f)=>s+(+f.kg||0),0);
+      const todas=S.finales.filter(f=>f.ocId===o.id);if(!todas.length&&o.estado!=='abierta')return;
+      const fs=todas.filter(f=>f.estado==='en stock');
+      const fin=todas.filter(f=>!(f.estado==='en stock'&&pk(f)===arm)),proc=fs.filter(f=>pk(f)===arm);
+      const kgHecho=fin.reduce((s,f)=>s+(+f.kg||0),0);
       const kgLam=(S.laminadas||[]).filter(l=>l.ocId===o.id&&l.estado!=='cerrada'&&!l.resto).reduce((s,l)=>s+Math.max(0,(+l.kg||0)-S.finales.filter(f=>f.lamId===l.id).reduce((a,f)=>a+(+f.kg||0),0)),0);
       const kgProc=proc.reduce((s,f)=>s+(+f.kg||0),0)+kgLam;
-      if(!kgFin&&!kgProc)return;
+      if(!kgHecho&&!kgProc)return;
       const ped=(o.chivPed&&peds[o.chivPed])||(o.solicitudChiv&&pedPorSol[lnN(o.solicitudChiv)])||null;
       const ocs=lnOcsPara({epIds:ped&&ped.epOcIds,nro:o.nro,cli:o.cliente,an:o.ancho,es:o.espPet||o.esp});
+      const desdeF=fin.map(f=>String(f.createdAt||'').slice(0,10)).filter(Boolean).sort()[0]||'';
+      const idsE=new Set(ocs.map(x=>x.id));
+      const entE=D.entregas.filter(e=>idsE.has(e.oc)&&(!desdeF||e.fec>=desdeF)).reduce((s,e)=>s+(+e.kg||0),0);
+      const kgFin=Math.max(0,kgHecho-entE);
       const pals=[...new Set(fin.map(pk))];
-      add(ocs,kgFin,kgProc,[{tipo:'ref',txt:`Refilado Lanús · OC ${o.nro||'—'}`+(pals.length?` · ${pals.length} pallet${pals.length>1?'s':''} listo${pals.length>1?'s':''} (${pals.join(', ')})`:'')+(kgProc?` · ${kg(kgProc)} kg en proceso`:'')}]);
+      add(ocs,kgFin,kgProc,[{tipo:'ref',txt:`Refilado Lanús · OC ${o.nro||'—'} · ${kg(kgHecho)} kg refilados en ${pals.length} pallet${pals.length===1?'':'s'}`+(entE?` − ${kg(entE)} kg ya entregados`:'')+(kgProc?` · ${kg(kgProc)} kg en proceso`:'')}]);
     });
     // directos al cliente y PET para laminar, desde los envíos de Chivilcoy
     if(F){
